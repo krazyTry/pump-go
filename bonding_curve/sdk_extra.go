@@ -240,7 +240,6 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 	return []solana.Instruction{createIx, buyIx}, pre, post, nil
 }
 
-// Deprecated: Use BuyV2Instructions.
 func (c *Client) BuyInstructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, user, baseMint, baseTokenProgram solana.PublicKey, amount, solAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	maxSolCost := solAmount + (solAmount*uint64(slippage*10))/1000
 
@@ -345,7 +344,6 @@ func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bon
 	return ix, pre, post, nil
 }
 
-// Deprecated: Use SellV2Instructions.
 func (c *Client) SellInstructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, user, baseMint, baseTokenProgram solana.PublicKey, amount, solAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	minSolOutput := solAmount - (solAmount*uint64(slippage*10))/1000
 
