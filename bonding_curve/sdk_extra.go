@@ -46,7 +46,7 @@ func (c *Client) CreateAndBuyInstructions(ctx context.Context, global *pump.Glob
 		post = append(post, unwrapIx)
 	}
 
-	buyIx, err := c.GetBuyInstruction(creator, user, baseMint, outputTokenAccount, amount, solAmount, helpers.GetFeeRecipient(global, false))
+	buyIx, err := c.GetBuyInstruction(creator, user, baseMint, solana.TokenProgramID, outputTokenAccount, amount, solAmount, helpers.GetFeeRecipient(global, false))
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (c *Client) CreateV2AndBuyInstructions(ctx context.Context, global *pump.Gl
 	pre := make([]solana.Instruction, 0)
 	post := make([]solana.Instruction, 0)
 
-	outputTokenAccount, ixA, err := helpers.GetOrCreateATAInstruction(ctx, c.RPC, baseMint, user, user, solana.TokenProgramID)
+	outputTokenAccount, ixA, err := helpers.GetOrCreateATAInstruction(ctx, c.RPC, baseMint, user, user, solana.Token2022ProgramID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *Client) CreateV2AndBuyInstructions(ctx context.Context, global *pump.Gl
 		post = append(post, unwrapIx)
 	}
 
-	buyIx, err := c.GetBuyInstruction(creator, user, baseMint, outputTokenAccount, amount, solAmount, helpers.GetFeeRecipient(global, mayhemMode))
+	buyIx, err := c.GetBuyInstruction(creator, user, baseMint, solana.Token2022ProgramID, outputTokenAccount, amount, solAmount, helpers.GetFeeRecipient(global, mayhemMode))
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 }
 
 // Deprecated: Use BuyV2Instructions.
-func (c *Client) BuyInstructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, baseMint, user solana.PublicKey, amount, solAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
+func (c *Client) BuyInstructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, user, baseMint, baseTokenProgram solana.PublicKey, amount, solAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	maxSolCost := solAmount + (solAmount*uint64(slippage*10))/1000
 
 	pre := make([]solana.Instruction, 0)
@@ -276,7 +276,7 @@ func (c *Client) BuyInstructions(ctx context.Context, global *pump.Global, bondi
 		post = append(post, unwrapIx)
 	}
 
-	ix, err := c.GetBuyInstruction(bondingCurve.Creator, user, baseMint, outputTokenAccount, amount, maxSolCost, helpers.GetFeeRecipient(global, bondingCurve.IsMayhemMode))
+	ix, err := c.GetBuyInstruction(bondingCurve.Creator, user, baseMint, baseTokenProgram, outputTokenAccount, amount, maxSolCost, helpers.GetFeeRecipient(global, bondingCurve.IsMayhemMode))
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -346,13 +346,13 @@ func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bon
 }
 
 // Deprecated: Use SellV2Instructions.
-func (c *Client) SellInstructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, baseMint, user solana.PublicKey, amount, solAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
+func (c *Client) SellInstructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, user, baseMint, baseTokenProgram solana.PublicKey, amount, solAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	minSolOutput := solAmount - (solAmount*uint64(slippage*10))/1000
 
 	pre := make([]solana.Instruction, 0)
 	post := make([]solana.Instruction, 0)
 
-	inputTokenAccount, ixA, err := helpers.GetOrCreateATAInstruction(ctx, c.RPC, baseMint, user, user, solana.TokenProgramID)
+	inputTokenAccount, ixA, err := helpers.GetOrCreateATAInstruction(ctx, c.RPC, baseMint, user, user, baseTokenProgram)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -375,7 +375,7 @@ func (c *Client) SellInstructions(ctx context.Context, global *pump.Global, bond
 		post = append(post, unwrapIx)
 	}
 
-	ix, err := c.GetSellInstruction(bondingCurve.Creator, user, baseMint, inputTokenAccount, amount, minSolOutput, helpers.GetFeeRecipient(global, bondingCurve.IsMayhemMode))
+	ix, err := c.GetSellInstruction(bondingCurve.Creator, user, baseMint, baseTokenProgram, inputTokenAccount, amount, minSolOutput, helpers.GetFeeRecipient(global, bondingCurve.IsMayhemMode))
 	if err != nil {
 		return nil, nil, nil, err
 	}

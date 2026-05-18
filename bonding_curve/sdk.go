@@ -43,16 +43,15 @@ func (s *Client) CreateInstruction(creator, user, baseMint solana.PublicKey, nam
 	)
 }
 
-// Deprecated: Use GetBuyV2Instruction.
-func (s *Client) GetBuyInstruction(creator, user, baseMint, userTokenAccount solana.PublicKey, amount, maxSolCost uint64, feeRecipient solana.PublicKey) (solana.Instruction, error) {
+func (s *Client) GetBuyInstruction(creator, user, baseMint, baseMintProgram, userTokenAccount solana.PublicKey, amount, maxSolCost uint64, feeRecipient solana.PublicKey) (solana.Instruction, error) {
 	creatorVault := DeriveCreatorVault(creator)
 
 	bondingCurve := DeriveBondingCurve(baseMint)
 	userVolumeAccumulator := DeriveUserVolumeAccumulator(user)
 
-	bondingCurveAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, solana.TokenProgramID)
+	bondingCurveAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseMintProgram)
 
-	return pump.NewBuyInstruction(
+	ix, err := pump.NewBuyInstruction(
 		amount,
 		maxSolCost,
 		pump.OptionBool{V0: true},
@@ -64,7 +63,7 @@ func (s *Client) GetBuyInstruction(creator, user, baseMint, userTokenAccount sol
 		userTokenAccount,
 		user,
 		solana.SystemProgramID,
-		solana.TokenProgramID,
+		baseMintProgram,
 		creatorVault,
 		s.EventAuthority,
 		ProgramID,
@@ -73,16 +72,27 @@ func (s *Client) GetBuyInstruction(creator, user, baseMint, userTokenAccount sol
 		s.FeeConfig,
 		fees.ProgramID,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if gi, ok := ix.(*solana.GenericInstruction); ok {
+		gi.AccountValues = append(
+			gi.AccountValues,
+			solana.NewAccountMeta(DeriveBondingCurveV2(baseMint), false, false),
+			solana.NewAccountMeta(helpers.GetStaticRandomFeeRecipientForBuyback(), true, false),
+		)
+	}
+	return ix, nil
 }
 
-// Deprecated: Use GetSellV2Instruction.
-func (s *Client) GetSellInstruction(creator, user, baseMint, userTokenAccount solana.PublicKey, amount, minSolOutput uint64, feeRecipient solana.PublicKey) (solana.Instruction, error) {
+func (s *Client) GetSellInstruction(creator, user, baseMint, baseTokenProgram, userTokenAccount solana.PublicKey, amount, minSolOutput uint64, feeRecipient solana.PublicKey) (solana.Instruction, error) {
 	bondingCurve := DeriveBondingCurve(baseMint)
 	creatorVault := DeriveCreatorVault(creator)
 
-	bondingCurveAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, solana.TokenProgramID)
+	bondingCurveAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseTokenProgram)
 
-	return pump.NewSellInstruction(
+	ix, err := pump.NewSellInstruction(
 		amount,
 		minSolOutput,
 		s.Global,
@@ -94,15 +104,26 @@ func (s *Client) GetSellInstruction(creator, user, baseMint, userTokenAccount so
 		user,
 		solana.SystemProgramID,
 		creatorVault,
-		solana.TokenProgramID,
+		baseTokenProgram,
 		s.EventAuthority,
 		ProgramID,
 		s.FeeConfig,
 		fees.ProgramID,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if gi, ok := ix.(*solana.GenericInstruction); ok {
+		gi.AccountValues = append(
+			gi.AccountValues,
+			solana.NewAccountMeta(DeriveBondingCurveV2(baseMint), false, false),
+			solana.NewAccountMeta(helpers.GetStaticRandomFeeRecipientForBuyback(), true, false),
+		)
+	}
+	return ix, nil
 }
 
-// Deprecated: Use MigrateV2Instruction.
 func (c *Client) MigrateInstruction(withdrawAuthority, user, baseMint, tokenProgram solana.PublicKey) (solana.Instruction, error) {
 	if tokenProgram.Equals(solana.PublicKey{}) {
 		tokenProgram = solana.TokenProgramID
@@ -153,7 +174,6 @@ func (c *Client) MigrateInstruction(withdrawAuthority, user, baseMint, tokenProg
 	)
 }
 
-// Deprecated: Use ClaimCashbackV2Instruction.
 func (s *Client) ClaimCashbackInstruction(user solana.PublicKey) (solana.Instruction, error) {
 	userVolumeAccumulator := DeriveUserVolumeAccumulator(user)
 
