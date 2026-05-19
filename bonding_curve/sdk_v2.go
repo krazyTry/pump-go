@@ -109,6 +109,52 @@ func (c *Client) GetBuyV2Instruction(creator, user, baseMint, quoteMint, baseTok
 	)
 }
 
+func (c *Client) GetBuyExactQuoteInV2Instruction(creator, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, tokenCost uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {
+	bondingCurve := DeriveBondingCurve(baseMint)
+	bondingCurveBaseAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseTokenProgram)
+	bondingCurveQuoteAta := helpers.FindAssociatedTokenAddress(bondingCurve, quoteMint, quoteTokenProgram)
+	creatorVault := DeriveCreatorVault(creator)
+	creatorVaultAta := helpers.FindAssociatedTokenAddress(creatorVault, quoteMint, quoteTokenProgram)
+	userVolumeAccumulator := DeriveUserVolumeAccumulator(user)
+	userVolumeAccumulatorAta := helpers.FindAssociatedTokenAddress(userVolumeAccumulator, quoteMint, quoteTokenProgram)
+	sharingConfig := DeriveFeesFeeSharingConfig(baseMint)
+
+	feeRecipientAta := helpers.FindAssociatedTokenAddress(feeRecipient, quoteMint, quoteTokenProgram)
+	buybackFeeRecipientAta := helpers.FindAssociatedTokenAddress(buybackFeeRecipient, quoteMint, quoteTokenProgram)
+
+	return pump.NewBuyExactQuoteInV2Instruction(
+		amount,
+		tokenCost,
+		c.Global,
+		baseMint,
+		quoteMint,
+		baseTokenProgram,
+		quoteTokenProgram,
+		solana.SPLAssociatedTokenAccountProgramID,
+		feeRecipient,
+		feeRecipientAta,
+		buybackFeeRecipient,
+		buybackFeeRecipientAta,
+		bondingCurve,
+		bondingCurveBaseAta,
+		bondingCurveQuoteAta,
+		user,
+		userBaseTokenAccount,
+		userQuoteTokenAccount,
+		creatorVault,
+		creatorVaultAta,
+		sharingConfig,
+		c.GlobalVolumeAccumulator,
+		userVolumeAccumulator,
+		userVolumeAccumulatorAta,
+		c.FeeConfig,
+		FeeProgramID,
+		solana.SystemProgramID,
+		c.EventAuthority,
+		ProgramID,
+	)
+}
+
 func (c *Client) GetSellV2Instruction(creator, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, minSolOutput uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {
 	bondingCurve := DeriveBondingCurve(baseMint)
 	bondingCurveBaseAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseTokenProgram)

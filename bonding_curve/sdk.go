@@ -86,6 +86,49 @@ func (s *Client) GetBuyInstruction(creator, user, baseMint, baseMintProgram, use
 	return ix, nil
 }
 
+func (s *Client) GetBuyExactSolInInstruction(creator, user, baseMint, baseMintProgram, userTokenAccount solana.PublicKey, amount, tokenCost uint64, feeRecipient solana.PublicKey) (solana.Instruction, error) {
+	creatorVault := DeriveCreatorVault(creator)
+
+	bondingCurve := DeriveBondingCurve(baseMint)
+	userVolumeAccumulator := DeriveUserVolumeAccumulator(user)
+
+	bondingCurveAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseMintProgram)
+
+	ix, err := pump.NewBuyExactSolInInstruction(
+		amount,
+		tokenCost,
+		pump.OptionBool{V0: true},
+		s.Global,
+		feeRecipient,
+		baseMint,
+		bondingCurve,
+		bondingCurveAta,
+		userTokenAccount,
+		user,
+		solana.SystemProgramID,
+		baseMintProgram,
+		creatorVault,
+		s.EventAuthority,
+		ProgramID,
+		s.GlobalVolumeAccumulator,
+		userVolumeAccumulator,
+		s.FeeConfig,
+		fees.ProgramID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if gi, ok := ix.(*solana.GenericInstruction); ok {
+		gi.AccountValues = append(
+			gi.AccountValues,
+			solana.NewAccountMeta(DeriveBondingCurveV2(baseMint), false, false),
+			solana.NewAccountMeta(helpers.GetStaticRandomFeeRecipientForBuyback(), true, false),
+		)
+	}
+	return ix, nil
+}
+
 func (s *Client) GetSellInstruction(creator, user, baseMint, baseTokenProgram, userTokenAccount solana.PublicKey, amount, minSolOutput uint64, feeRecipient solana.PublicKey) (solana.Instruction, error) {
 	bondingCurve := DeriveBondingCurve(baseMint)
 	creatorVault := DeriveCreatorVault(creator)
