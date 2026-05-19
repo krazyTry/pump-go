@@ -5,7 +5,7 @@ import (
 )
 
 func DeriveMintMetadata(mint solana.PublicKey) solana.PublicKey {
-	pub, _, _ := solana.FindProgramAddress([][]byte{[]byte("metadata"), MetaplexProgramID.Bytes(), mint.Bytes()}, MetaplexProgramID)
+	pub, _, _ := solana.FindProgramAddress([][]byte{[]byte("metadata"), solana.TokenMetadataProgramID.Bytes(), mint.Bytes()}, solana.TokenMetadataProgramID)
 	return pub
 }
 

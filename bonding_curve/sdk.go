@@ -31,7 +31,7 @@ func (s *Client) CreateInstruction(creator, user, baseMint solana.PublicKey, nam
 		bondingCurve,
 		bondingCurveAta,
 		s.Global,
-		MetaplexProgramID,
+		solana.TokenMetadataProgramID,
 		metadata,
 		user,
 		solana.SystemProgramID,
