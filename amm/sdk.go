@@ -123,7 +123,7 @@ func (s *Client) CreatePoolInstruction(
 	quoteTokenProgram solana.PublicKey,
 ) ([]solana.Instruction, error) {
 
-	pool := DeriveCanonicalPumpPoolPDA(params.Index, creator, baseMint, quoteMint)
+	pool := DeriveCanonicalPumpPoolPDA(params.Index, baseMint, quoteMint)
 	lpMint := DeriveLpMint(pool)
 
 	userPoolTokenAccount := helpers.FindAssociatedTokenAddress(creator, lpMint, solana.Token2022ProgramID)

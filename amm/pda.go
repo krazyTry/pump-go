@@ -8,11 +8,13 @@ import (
 
 const CanonicalPoolIndex uint16 = 0
 
-func DeriveCanonicalPumpPoolPDA(index uint16, creator, baseMint, quoteMint solana.PublicKey) solana.PublicKey {
+func DeriveCanonicalPumpPoolPDA(index uint16, baseMint, quoteMint solana.PublicKey) solana.PublicKey {
 	idx := make([]byte, 2)
 	binary.LittleEndian.PutUint16(idx, index)
 
-	key, _, _ := solana.FindProgramAddress([][]byte{[]byte("pool"), idx, creator.Bytes(), baseMint.Bytes(), quoteMint.Bytes()}, ProgramID)
+	poolAuthority := DerivePumpPoolAuthority(baseMint)
+
+	key, _, _ := solana.FindProgramAddress([][]byte{[]byte("pool"), idx, poolAuthority.Bytes(), baseMint.Bytes(), quoteMint.Bytes()}, ProgramID)
 	return key
 }
 
