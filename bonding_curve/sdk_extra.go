@@ -112,8 +112,8 @@ func (c *Client) CreateAndBuyV2Instructions(ctx context.Context, global *pump.Gl
 		quoteTokenAccount,
 		amount,
 		solAmount,
-		helpers.GetStaticRandomFeeRecipient(), // helpers.GetFeeRecipient(global, false),
-		helpers.GetStaticRandomFeeRecipientForBuyback(),
+		helpers.GetStaticRandomProtocolFeeRecipient(), // helpers.GetFeeRecipient(global, false),
+		helpers.GetStaticRandomBuybackFeeRecipient(),
 	)
 	if err != nil {
 		return nil, nil, nil, err
@@ -232,7 +232,7 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 		amount,
 		quoteAmount,
 		helpers.GetFeeRecipient(global, mayhemMode),
-		helpers.GetStaticRandomFeeRecipientForBuyback(),
+		helpers.GetStaticRandomBuybackFeeRecipient(),
 	)
 	if err != nil {
 		return nil, nil, nil, err
@@ -336,7 +336,7 @@ func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bon
 		amount,
 		maxQuote,
 		helpers.GetFeeRecipient(global, bondingCurve.IsMayhemMode),
-		helpers.GetStaticRandomFeeRecipientForBuyback(),
+		helpers.GetStaticRandomBuybackFeeRecipient(),
 	)
 	if err != nil {
 		return nil, nil, nil, err
@@ -428,7 +428,7 @@ func (c *Client) SellV2Instructions(ctx context.Context, global *pump.Global, bo
 		amount,
 		minQuote,
 		helpers.GetFeeRecipient(global, bondingCurve.IsMayhemMode),
-		helpers.GetStaticRandomFeeRecipientForBuyback(),
+		helpers.GetStaticRandomBuybackFeeRecipient(),
 	)
 	if err != nil {
 		return nil, nil, nil, err

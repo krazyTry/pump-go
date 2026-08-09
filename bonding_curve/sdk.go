@@ -80,7 +80,7 @@ func (s *Client) GetBuyInstruction(creator, user, baseMint, baseMintProgram, use
 		gi.AccountValues = append(
 			gi.AccountValues,
 			solana.NewAccountMeta(DeriveBondingCurveV2(baseMint), false, false),
-			solana.NewAccountMeta(helpers.GetStaticRandomFeeRecipientForBuyback(), true, false),
+			solana.NewAccountMeta(helpers.GetStaticRandomBuybackFeeRecipient(), true, false),
 		)
 	}
 	return ix, nil
@@ -123,7 +123,7 @@ func (s *Client) GetBuyExactSolInInstruction(creator, user, baseMint, baseMintPr
 		gi.AccountValues = append(
 			gi.AccountValues,
 			solana.NewAccountMeta(DeriveBondingCurveV2(baseMint), false, false),
-			solana.NewAccountMeta(helpers.GetStaticRandomFeeRecipientForBuyback(), true, false),
+			solana.NewAccountMeta(helpers.GetStaticRandomBuybackFeeRecipient(), true, false),
 		)
 	}
 	return ix, nil
@@ -161,7 +161,7 @@ func (s *Client) GetSellInstruction(creator, user, baseMint, baseTokenProgram, u
 		gi.AccountValues = append(
 			gi.AccountValues,
 			solana.NewAccountMeta(DeriveBondingCurveV2(baseMint), false, false),
-			solana.NewAccountMeta(helpers.GetStaticRandomFeeRecipientForBuyback(), true, false),
+			solana.NewAccountMeta(helpers.GetStaticRandomBuybackFeeRecipient(), true, false),
 		)
 	}
 	return ix, nil
