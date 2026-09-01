@@ -19,9 +19,9 @@ var (
 const (
 	MaxShareholders = 10
 
-	VirtualTokenReserves = 1_073_000_000_000_000
-	VirtualSolReserves   = 30_000_000_000
-	VirtualQuoteReserves = 4_292_000_000
+	VirtualTokenReserves uint64 = 1_073_000_000_000_000
+	VirtualSolReserves   uint64 = 30_000_000_000
+	VirtualQuoteReserves uint64 = 4_292_000_000
 
-	RealTokenReserves = 793_100_000_000_000
+	RealTokenReserves uint64 = 793_100_000_000_000
 )
