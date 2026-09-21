@@ -8,7 +8,7 @@ import (
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
 	"github.com/krazyTry/pump-go/bonding_curve/math"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 	pump "github.com/krazyTry/pump-go/gen/pump"
 )
 

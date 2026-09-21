@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	token_metadata "github.com/928799934/metaplex-go/clients/token-metadata"
-	"github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/solana-foundation/solana-go/v2"
+	"github.com/solana-foundation/solana-go/v2/rpc"
 	"github.com/krazyTry/pump-go/amm"
 )
 

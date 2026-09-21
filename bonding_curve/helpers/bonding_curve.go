@@ -3,7 +3,7 @@ package helpers
 import (
 	"errors"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 	pump "github.com/krazyTry/pump-go/gen/pump"
 	"github.com/shopspring/decimal"
 )

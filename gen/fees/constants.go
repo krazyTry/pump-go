@@ -3,7 +3,7 @@
 
 package pump_fees
 
-import solanago "github.com/gagliardetto/solana-go"
+import solanago "github.com/solana-foundation/solana-go/v2"
 
 // Constants defined in the IDL:
 

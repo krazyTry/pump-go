@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))

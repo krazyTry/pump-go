@@ -3,6 +3,6 @@
 
 package pump_amm
 
-import solanago "github.com/gagliardetto/solana-go"
+import solanago "github.com/solana-foundation/solana-go/v2"
 
 var ProgramID = solanago.MustPublicKeyFromBase58("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA")

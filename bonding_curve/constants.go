@@ -1,7 +1,7 @@
 package bonding_curve
 
 import (
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 	ammgen "github.com/krazyTry/pump-go/gen/amm"
 	feesgen "github.com/krazyTry/pump-go/gen/fees"
 	pumpgen "github.com/krazyTry/pump-go/gen/pump"

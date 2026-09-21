@@ -3,7 +3,7 @@ package amm
 import (
 	"encoding/binary"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 const CanonicalPoolIndex uint16 = 0

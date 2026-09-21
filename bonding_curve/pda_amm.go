@@ -3,7 +3,7 @@ package bonding_curve
 import (
 	"encoding/binary"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 // Amm

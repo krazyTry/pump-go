@@ -1,8 +1,8 @@
 package helpers
 
 import (
-	solana "github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/programs/token"
+	solana "github.com/solana-foundation/solana-go/v2"
+	"github.com/solana-foundation/solana-go/v2/programs/token"
 )
 
 // TokenInfo mirrors needed fields for Token2022 fee calculations.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 const (

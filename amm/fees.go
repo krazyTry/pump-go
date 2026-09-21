@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 	"github.com/shopspring/decimal"
 )
 

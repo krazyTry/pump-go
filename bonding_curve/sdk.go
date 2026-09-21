@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
 	amm "github.com/krazyTry/pump-go/gen/amm"
 	fees "github.com/krazyTry/pump-go/gen/fees"

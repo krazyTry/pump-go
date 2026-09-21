@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 	"github.com/krazyTry/pump-go/amm/helpers"
 	"github.com/shopspring/decimal"
 )

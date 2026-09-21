@@ -1,9 +1,9 @@
 package amm
 
 import (
-	solana "github.com/gagliardetto/solana-go"
-	associatedtokenaccount "github.com/gagliardetto/solana-go/programs/associated-token-account"
-	"github.com/gagliardetto/solana-go/programs/system"
+	solana "github.com/solana-foundation/solana-go/v2"
+	associatedtokenaccount "github.com/solana-foundation/solana-go/v2/programs/associated-token-account"
+	"github.com/solana-foundation/solana-go/v2/programs/system"
 	"github.com/krazyTry/pump-go/amm/helpers"
 	pump_amm "github.com/krazyTry/pump-go/gen/amm"
 )

@@ -1,7 +1,7 @@
 package bonding_curve
 
 import (
-	solana "github.com/gagliardetto/solana-go"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 func DeriveMintMetadata(mint solana.PublicKey) solana.PublicKey {
