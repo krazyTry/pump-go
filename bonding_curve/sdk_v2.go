@@ -1,13 +1,13 @@
 package bonding_curve
 
 import (
-	solana "github.com/solana-foundation/solana-go/v2"
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
 	pump "github.com/krazyTry/pump-go/gen/pump"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 // Token 2022
-func (s *Client) CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTokenProgram solana.PublicKey, name, symbol, uri string, mayhemMode bool, cashback bool) (solana.Instruction, error) {
+func (s *Client) CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTokenProgram solana.PublicKey, name, symbol, uri string, mayhemMode bool, cashback bool, creatorFeeBps uint64, isHolderReward bool) (solana.Instruction, error) {
 
 	mintAuthority := DeriveMintAuthority()
 
@@ -21,6 +21,9 @@ func (s *Client) CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTo
 
 	mayhemTokenVault := helpers.FindAssociatedTokenAddress(solVault, baseMint, solana.Token2022ProgramID)
 
+	// creatorFeeBpsParam OptionU64,
+	// isHolderRewardParam OptionBool,
+
 	ix, err := pump.NewCreateV2Instruction(
 		name,
 		symbol,
@@ -28,6 +31,9 @@ func (s *Client) CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTo
 		creator,
 		mayhemMode,
 		pump.OptionBool{V0: cashback},
+		pump.OptionU64{V0: creatorFeeBps},
+		pump.OptionBool{V0: isHolderReward},
+
 		baseMint,
 		mintAuthority,
 		bondingCurve,
@@ -63,7 +69,7 @@ func (s *Client) CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTo
 	return ix, nil
 }
 
-func (c *Client) GetBuyV2Instruction(creator, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, maxSolCost uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {
+func (c *Client) GetBuyV2Instruction(creator solana.PublicKey, partialFill bool, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, maxSolCost uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {
 	bondingCurve := DeriveBondingCurve(baseMint)
 	bondingCurveBaseAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseTokenProgram)
 	bondingCurveQuoteAta := helpers.FindAssociatedTokenAddress(bondingCurve, quoteMint, quoteTokenProgram)
@@ -79,6 +85,7 @@ func (c *Client) GetBuyV2Instruction(creator, user, baseMint, quoteMint, baseTok
 	return pump.NewBuyV2Instruction(
 		amount,
 		maxSolCost,
+		pump.OptionBool{V0: partialFill},
 		c.Global,
 		baseMint,
 		quoteMint,
@@ -109,7 +116,7 @@ func (c *Client) GetBuyV2Instruction(creator, user, baseMint, quoteMint, baseTok
 	)
 }
 
-func (c *Client) GetBuyExactQuoteInV2Instruction(creator, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, tokenCost uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {
+func (c *Client) GetBuyExactQuoteInV2Instruction(creator solana.PublicKey, partialFill bool, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, tokenCost uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {
 	bondingCurve := DeriveBondingCurve(baseMint)
 	bondingCurveBaseAta := helpers.FindAssociatedTokenAddress(bondingCurve, baseMint, baseTokenProgram)
 	bondingCurveQuoteAta := helpers.FindAssociatedTokenAddress(bondingCurve, quoteMint, quoteTokenProgram)
@@ -125,6 +132,7 @@ func (c *Client) GetBuyExactQuoteInV2Instruction(creator, user, baseMint, quoteM
 	return pump.NewBuyExactQuoteInV2Instruction(
 		amount,
 		tokenCost,
+		pump.OptionBool{V0: partialFill},
 		c.Global,
 		baseMint,
 		quoteMint,

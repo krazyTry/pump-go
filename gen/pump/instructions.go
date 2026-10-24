@@ -12,6 +12,66 @@ import (
 	solanago "github.com/solana-foundation/solana-go/v2"
 )
 
+// Builds a "add_quote_control_mint" instruction.
+func NewAddQuoteControlMintInstruction(
+	// Params:
+	quoteMintParam solanago.PublicKey,
+	initialVirtualQuoteReservesParam uint64,
+
+	// Accounts:
+	authorityAccount solanago.PublicKey,
+	globalAccount solanago.PublicKey,
+	quoteControlAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_AddQuoteControlMint[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `quoteMintParam`:
+		err = enc__.Encode(quoteMintParam)
+		if err != nil {
+			return nil, errors.NewField("quoteMintParam", err)
+		}
+		// Serialize `initialVirtualQuoteReservesParam`:
+		err = enc__.Encode(initialVirtualQuoteReservesParam)
+		if err != nil {
+			return nil, errors.NewField("initialVirtualQuoteReservesParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, true, true))
+		// Account 1 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 2 "quote_control": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteControlAccount, true, false))
+		// Account 3 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 4 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 5 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "add_quote_mint" instruction.
 func NewAddQuoteMintInstruction(
 	// Params:
@@ -60,17 +120,38 @@ func NewAddQuoteMintInstruction(
 	), nil
 }
 
-// Builds a "admin_set_creator" instruction.
-// Allows Global::admin_set_creator_authority to override the bonding curve creator
-func NewAdminSetCreatorInstruction(
+// Builds a "admin_cto" instruction.
+func NewAdminCtoInstruction(
 	// Params:
-	creatorParam solanago.PublicKey,
+	isHolderRewardParam *bool,
+	creatorFeeBpsParam *uint64,
+	newCreatorParam *solanago.PublicKey,
 
 	// Accounts:
 	adminSetCreatorAuthorityAccount solanago.PublicKey,
 	globalAccount solanago.PublicKey,
 	mintAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	associatedTokenProgramAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
 	bondingCurveAccount solanago.PublicKey,
+	currentCreatorAccount solanago.PublicKey,
+	currentCreatorQuoteTokenAccountAccount solanago.PublicKey,
+	creatorVaultAccount solanago.PublicKey,
+	creatorVaultQuoteTokenAccountAccount solanago.PublicKey,
+	holderCreatorVaultAccount solanago.PublicKey,
+	holderCreatorVaultQuoteTokenAccountAccount solanago.PublicKey,
+	pumpAmmAccount solanago.PublicKey,
+	ammGlobalConfigAccount solanago.PublicKey,
+	poolAuthorityAccount solanago.PublicKey,
+	poolAccount solanago.PublicKey,
+	pumpAmmEventAuthorityAccount solanago.PublicKey,
+	coinCreatorVaultAuthorityAccount solanago.PublicKey,
+	coinCreatorVaultAtaAccount solanago.PublicKey,
+	sharingConfigAccount solanago.PublicKey,
+	pumpFeesAccount solanago.PublicKey,
+	pumpFeesEventAuthorityAccount solanago.PublicKey,
 	eventAuthorityAccount solanago.PublicKey,
 	programAccount solanago.PublicKey,
 ) (solanago.Instruction, error) {
@@ -78,32 +159,131 @@ func NewAdminSetCreatorInstruction(
 	enc__ := binary.NewBorshEncoder(buf__)
 
 	// Encode the instruction discriminator.
-	err := enc__.WriteBytes(Instruction_AdminSetCreator[:], false)
+	err := enc__.WriteBytes(Instruction_AdminCto[:], false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
 	}
 	{
-		// Serialize `creatorParam`:
-		err = enc__.Encode(creatorParam)
-		if err != nil {
-			return nil, errors.NewField("creatorParam", err)
+		// Serialize `isHolderRewardParam` (optional):
+		{
+			if isHolderRewardParam == nil {
+				err = enc__.WriteOption(false)
+				if err != nil {
+					return nil, errors.NewOption("isHolderRewardParam", fmt.Errorf("error while encoding optionality: %w", err))
+				}
+			} else {
+				err = enc__.WriteOption(true)
+				if err != nil {
+					return nil, errors.NewOption("isHolderRewardParam", fmt.Errorf("error while encoding optionality: %w", err))
+				}
+				err = enc__.Encode(isHolderRewardParam)
+				if err != nil {
+					return nil, errors.NewField("isHolderRewardParam", err)
+				}
+			}
+		}
+		// Serialize `creatorFeeBpsParam` (optional):
+		{
+			if creatorFeeBpsParam == nil {
+				err = enc__.WriteOption(false)
+				if err != nil {
+					return nil, errors.NewOption("creatorFeeBpsParam", fmt.Errorf("error while encoding optionality: %w", err))
+				}
+			} else {
+				err = enc__.WriteOption(true)
+				if err != nil {
+					return nil, errors.NewOption("creatorFeeBpsParam", fmt.Errorf("error while encoding optionality: %w", err))
+				}
+				err = enc__.Encode(creatorFeeBpsParam)
+				if err != nil {
+					return nil, errors.NewField("creatorFeeBpsParam", err)
+				}
+			}
+		}
+		// Serialize `newCreatorParam` (optional):
+		{
+			if newCreatorParam == nil {
+				err = enc__.WriteOption(false)
+				if err != nil {
+					return nil, errors.NewOption("newCreatorParam", fmt.Errorf("error while encoding optionality: %w", err))
+				}
+			} else {
+				err = enc__.WriteOption(true)
+				if err != nil {
+					return nil, errors.NewOption("newCreatorParam", fmt.Errorf("error while encoding optionality: %w", err))
+				}
+				err = enc__.Encode(newCreatorParam)
+				if err != nil {
+					return nil, errors.NewField("newCreatorParam", err)
+				}
+			}
 		}
 	}
 	accounts__ := solanago.AccountMetaSlice{}
 
 	// Add the accounts to the instruction.
 	{
-		// Account 0 "admin_set_creator_authority": Read-only, Signer, Required
-		accounts__.Append(solanago.NewAccountMeta(adminSetCreatorAuthorityAccount, false, true))
+		// Account 0 "admin_set_creator_authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(adminSetCreatorAuthorityAccount, true, true))
 		// Account 1 "global": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
 		// Account 2 "mint": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(mintAccount, false, false))
-		// Account 3 "bonding_curve": Writable, Non-signer, Required
+		// Account 3 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 4 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 5 "associated_token_program": Read-only, Non-signer, Required, Address: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+		accounts__.Append(solanago.NewAccountMeta(associatedTokenProgramAccount, false, false))
+		// Account 6 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 7 "bonding_curve": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
-		// Account 4 "event_authority": Read-only, Non-signer, Required
+		// Account 8 "current_creator": Read-only, Non-signer, Required
+		// Not declared writable: a pre-creator (legacy) curve stores the zero key, which is the
+		// system program, whose write lock the runtime always demotes. Callers MUST still pass this
+		// account as writable whenever it is a wallet, so the outgoing creator can be paid from its
+		// vaults; otherwise the instruction fails with `CtoCreatorAccountNotWritable`. A creator that
+		// is not a system-owned wallet (a program, a sysvar, a pump-fees or other program-owned
+		// account) is skipped, its vault balances stay collectable, and it may be passed read-only.
+		accounts__.Append(solanago.NewAccountMeta(currentCreatorAccount, false, false))
+		// Account 9 "current_creator_quote_token_account": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(currentCreatorQuoteTokenAccountAccount, true, false))
+		// Account 10 "creator_vault": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorVaultAccount, true, false))
+		// Account 11 "creator_vault_quote_token_account": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorVaultQuoteTokenAccountAccount, true, false))
+		// Account 12 "holder_creator_vault": Writable, Non-signer, Required
+		// `["creator-vault", find_program_address(["holder-rewards", mint], pump)]`. The sweep
+		// destination on the holder path of a fee-shared coin, ignored otherwise. Re-derived in the
+		// handler before it is written to; kept out of the seeds constraints to stay under the sBPF
+		// stack frame.
+		accounts__.Append(solanago.NewAccountMeta(holderCreatorVaultAccount, true, false))
+		// Account 13 "holder_creator_vault_quote_token_account": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(holderCreatorVaultQuoteTokenAccountAccount, true, false))
+		// Account 14 "pump_amm": Read-only, Non-signer, Required, Address: pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA
+		accounts__.Append(solanago.NewAccountMeta(pumpAmmAccount, false, false))
+		// Account 15 "amm_global_config": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(ammGlobalConfigAccount, false, false))
+		// Account 16 "pool_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(poolAuthorityAccount, false, false))
+		// Account 17 "pool": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(poolAccount, true, false))
+		// Account 18 "pump_amm_event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(pumpAmmEventAuthorityAccount, false, false))
+		// Account 19 "coin_creator_vault_authority": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(coinCreatorVaultAuthorityAccount, true, false))
+		// Account 20 "coin_creator_vault_ata": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(coinCreatorVaultAtaAccount, true, false))
+		// Account 21 "sharing_config": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(sharingConfigAccount, true, false))
+		// Account 22 "pump_fees": Read-only, Non-signer, Required, Address: pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ
+		accounts__.Append(solanago.NewAccountMeta(pumpFeesAccount, false, false))
+		// Account 23 "pump_fees_event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(pumpFeesEventAuthorityAccount, false, false))
+		// Account 24 "event_authority": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
-		// Account 5 "program": Read-only, Non-signer, Required
+		// Account 25 "program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
 	}
 
@@ -269,6 +449,7 @@ func NewBuyInstruction(
 	amountParam uint64,
 	maxSolCostParam uint64,
 	trackVolumeParam OptionBool,
+	partialFillParam OptionBool,
 
 	// Accounts:
 	globalAccount solanago.PublicKey,
@@ -311,6 +492,11 @@ func NewBuyInstruction(
 		err = enc__.Encode(trackVolumeParam)
 		if err != nil {
 			return nil, errors.NewField("trackVolumeParam", err)
+		}
+		// Serialize `partialFillParam`:
+		err = enc__.Encode(partialFillParam)
+		if err != nil {
+			return nil, errors.NewField("partialFillParam", err)
 		}
 	}
 	accounts__ := solanago.AccountMetaSlice{}
@@ -364,6 +550,7 @@ func NewBuyExactQuoteInV2Instruction(
 	// Params:
 	spendableQuoteInParam uint64,
 	minTokensOutParam uint64,
+	partialFillParam OptionBool,
 
 	// Accounts:
 	globalAccount solanago.PublicKey,
@@ -413,6 +600,11 @@ func NewBuyExactQuoteInV2Instruction(
 		if err != nil {
 			return nil, errors.NewField("minTokensOutParam", err)
 		}
+		// Serialize `partialFillParam`:
+		err = enc__.Encode(partialFillParam)
+		if err != nil {
+			return nil, errors.NewField("partialFillParam", err)
+		}
 	}
 	accounts__ := solanago.AccountMetaSlice{}
 
@@ -449,6 +641,8 @@ func NewBuyExactQuoteInV2Instruction(
 		// Account 14 "associated_base_user": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(associatedBaseUserAccount, true, false))
 		// Account 15 "associated_quote_user": Writable, Non-signer, Required
+		// canonical SPL associated-token PDA. Validated in handlers via
+		// `validate_user_quote_token_account` for non-legacy mints; ignored for legacy (SOL) trades.
 		accounts__.Append(solanago.NewAccountMeta(associatedQuoteUserAccount, true, false))
 		// Account 16 "creator_vault": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(creatorVaultAccount, true, false))
@@ -485,6 +679,108 @@ func NewBuyExactQuoteInV2Instruction(
 	), nil
 }
 
+// Builds a "buy_exact_quote_in_v3" instruction.
+func NewBuyExactQuoteInV3Instruction(
+	// Params:
+	spendableQuoteInParam uint64,
+	minTokensOutParam uint64,
+	partialFillParam OptionBool,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	baseMintAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	baseTokenProgramAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	bondingCurveAccount solanago.PublicKey,
+	associatedBaseBondingCurveAccount solanago.PublicKey,
+	associatedQuoteBondingCurveAccount solanago.PublicKey,
+	userAccount solanago.PublicKey,
+	associatedBaseUserAccount solanago.PublicKey,
+	associatedQuoteUserAccount solanago.PublicKey,
+	userVolumeAccumulatorAccount solanago.PublicKey,
+	feeConfigAccount solanago.PublicKey,
+	buybackFeeRecipientAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_BuyExactQuoteInV3[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `spendableQuoteInParam`:
+		err = enc__.Encode(spendableQuoteInParam)
+		if err != nil {
+			return nil, errors.NewField("spendableQuoteInParam", err)
+		}
+		// Serialize `minTokensOutParam`:
+		err = enc__.Encode(minTokensOutParam)
+		if err != nil {
+			return nil, errors.NewField("minTokensOutParam", err)
+		}
+		// Serialize `partialFillParam`:
+		err = enc__.Encode(partialFillParam)
+		if err != nil {
+			return nil, errors.NewField("partialFillParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 1 "base_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseMintAccount, false, false))
+		// Account 2 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 3 "base_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseTokenProgramAccount, false, false))
+		// Account 4 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 5 "bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
+		// Account 6 "associated_base_bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(associatedBaseBondingCurveAccount, true, false))
+		// Account 7 "associated_quote_bonding_curve": Writable, Non-signer, Required
+		// Must already exist on a token quote (create_v2 creates it); ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteBondingCurveAccount, true, false))
+		// Account 8 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
+		// Account 9 "associated_base_user": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(associatedBaseUserAccount, true, false))
+		// Account 10 "associated_quote_user": Writable, Non-signer, Required
+		// canonical SPL associated-token PDA. Validated in the handlers via
+		// `validate_user_quote_token_account` for non-legacy mints; ignored for legacy (SOL) trades.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteUserAccount, true, false))
+		// Account 11 "user_volume_accumulator": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userVolumeAccumulatorAccount, true, false))
+		// Account 12 "fee_config": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(feeConfigAccount, false, false))
+		// Account 13 "buyback_fee_recipient": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(buybackFeeRecipientAccount, true, false))
+		// Account 14 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 15 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 16 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "buy_exact_sol_in" instruction.
 // Given a budget of spendable SOL, buy at least min_tokens_out tokens. // Fees are deducted from spendable_sol_in. //  // # Quote formulas // Where: // - total_fee_bps = protocol_fee_bps + creator_fee_bps (creator_fee_bps is 0 if no creator) // - floor(a/b) = a / b (integer division) // - ceil(a/b) = (a + b - 1) / b //  // SOL → tokens quote // To calculate tokens_out for a given spendable_sol_in: // 1. net_sol = floor(spendable_sol_in * 10_000 / (10_000 + total_fee_bps)) // 2. fees = ceil(net_sol * protocol_fee_bps / 10_000) + ceil(net_sol * creator_fee_bps / 10_000) (creator_fee_bps is 0 if no creator) // 3. if net_sol + fees > spendable_sol_in: net_sol = net_sol - (net_sol + fees - spendable_sol_in) // 4. tokens_out = floor((net_sol - 1) * virtual_token_reserves / (virtual_sol_reserves + net_sol - 1)) //  // Reverse quote (tokens → SOL) // To calculate spendable_sol_in for a desired number of tokens: // 1. net_sol = ceil(tokens * virtual_sol_reserves / (virtual_token_reserves - tokens)) + 1 // 2. spendable_sol_in = ceil(net_sol * (10_000 + total_fee_bps) / 10_000) //  // Rent // Separately make sure the instruction's payer has enough SOL to cover rent for: // - creator_vault: rent.minimum_balance(0) // - user_volume_accumulator: rent.minimum_balance(UserVolumeAccumulator::LEN)
 func NewBuyExactSolInInstruction(
@@ -492,6 +788,7 @@ func NewBuyExactSolInInstruction(
 	spendableSolInParam uint64,
 	minTokensOutParam uint64,
 	trackVolumeParam OptionBool,
+	partialFillParam OptionBool,
 
 	// Accounts:
 	globalAccount solanago.PublicKey,
@@ -534,6 +831,11 @@ func NewBuyExactSolInInstruction(
 		err = enc__.Encode(trackVolumeParam)
 		if err != nil {
 			return nil, errors.NewField("trackVolumeParam", err)
+		}
+		// Serialize `partialFillParam`:
+		err = enc__.Encode(partialFillParam)
+		if err != nil {
+			return nil, errors.NewField("partialFillParam", err)
 		}
 	}
 	accounts__ := solanago.AccountMetaSlice{}
@@ -587,6 +889,7 @@ func NewBuyV2Instruction(
 	// Params:
 	amountParam uint64,
 	maxSolCostParam uint64,
+	partialFillParam OptionBool,
 
 	// Accounts:
 	globalAccount solanago.PublicKey,
@@ -636,6 +939,11 @@ func NewBuyV2Instruction(
 		if err != nil {
 			return nil, errors.NewField("maxSolCostParam", err)
 		}
+		// Serialize `partialFillParam`:
+		err = enc__.Encode(partialFillParam)
+		if err != nil {
+			return nil, errors.NewField("partialFillParam", err)
+		}
 	}
 	accounts__ := solanago.AccountMetaSlice{}
 
@@ -672,6 +980,8 @@ func NewBuyV2Instruction(
 		// Account 14 "associated_base_user": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(associatedBaseUserAccount, true, false))
 		// Account 15 "associated_quote_user": Writable, Non-signer, Required
+		// canonical SPL associated-token PDA. Validated in handlers via
+		// `validate_user_quote_token_account` for non-legacy mints; ignored for legacy (SOL) trades.
 		accounts__.Append(solanago.NewAccountMeta(associatedQuoteUserAccount, true, false))
 		// Account 16 "creator_vault": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(creatorVaultAccount, true, false))
@@ -697,6 +1007,108 @@ func NewBuyV2Instruction(
 		// Account 25 "event_authority": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
 		// Account 26 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "buy_v3" instruction.
+func NewBuyV3Instruction(
+	// Params:
+	amountParam uint64,
+	maxSolCostParam uint64,
+	partialFillParam OptionBool,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	baseMintAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	baseTokenProgramAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	bondingCurveAccount solanago.PublicKey,
+	associatedBaseBondingCurveAccount solanago.PublicKey,
+	associatedQuoteBondingCurveAccount solanago.PublicKey,
+	userAccount solanago.PublicKey,
+	associatedBaseUserAccount solanago.PublicKey,
+	associatedQuoteUserAccount solanago.PublicKey,
+	userVolumeAccumulatorAccount solanago.PublicKey,
+	feeConfigAccount solanago.PublicKey,
+	buybackFeeRecipientAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_BuyV3[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `amountParam`:
+		err = enc__.Encode(amountParam)
+		if err != nil {
+			return nil, errors.NewField("amountParam", err)
+		}
+		// Serialize `maxSolCostParam`:
+		err = enc__.Encode(maxSolCostParam)
+		if err != nil {
+			return nil, errors.NewField("maxSolCostParam", err)
+		}
+		// Serialize `partialFillParam`:
+		err = enc__.Encode(partialFillParam)
+		if err != nil {
+			return nil, errors.NewField("partialFillParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 1 "base_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseMintAccount, false, false))
+		// Account 2 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 3 "base_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseTokenProgramAccount, false, false))
+		// Account 4 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 5 "bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
+		// Account 6 "associated_base_bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(associatedBaseBondingCurveAccount, true, false))
+		// Account 7 "associated_quote_bonding_curve": Writable, Non-signer, Required
+		// Must already exist on a token quote (create_v2 creates it); ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteBondingCurveAccount, true, false))
+		// Account 8 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
+		// Account 9 "associated_base_user": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(associatedBaseUserAccount, true, false))
+		// Account 10 "associated_quote_user": Writable, Non-signer, Required
+		// canonical SPL associated-token PDA. Validated in the handlers via
+		// `validate_user_quote_token_account` for non-legacy mints; ignored for legacy (SOL) trades.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteUserAccount, true, false))
+		// Account 11 "user_volume_accumulator": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userVolumeAccumulatorAccount, true, false))
+		// Account 12 "fee_config": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(feeConfigAccount, false, false))
+		// Account 13 "buyback_fee_recipient": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(buybackFeeRecipientAccount, true, false))
+		// Account 14 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 15 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 16 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
 	}
 
@@ -749,14 +1161,15 @@ func NewClaimCashbackInstruction(
 }
 
 // Builds a "claim_cashback_v2" instruction.
+// Pays out the user's accrued cashback. For a token quote, `associated_quote_user` may be // any token account of `quote_mint` owned by `user`, not only the associated one.
 func NewClaimCashbackV2Instruction(
 	userAccount solanago.PublicKey,
-	associatedQuoteUserAccount solanago.PublicKey,
 	userVolumeAccumulatorAccount solanago.PublicKey,
-	associatedUserVolumeAccumulatorAccount solanago.PublicKey,
 	quoteMintAccount solanago.PublicKey,
 	quoteTokenProgramAccount solanago.PublicKey,
 	associatedTokenProgramAccount solanago.PublicKey,
+	associatedUserVolumeAccumulatorAccount solanago.PublicKey,
+	associatedQuoteUserAccount solanago.PublicKey,
 	systemProgramAccount solanago.PublicKey,
 	eventAuthorityAccount solanago.PublicKey,
 	programAccount solanago.PublicKey,
@@ -942,6 +1355,62 @@ func NewCollectCreatorFeeInstruction(
 	), nil
 }
 
+// Builds a "collect_creator_fee_v2" instruction.
+// Collects creator_fee from creator_vault to the coin creator account
+func NewCollectCreatorFeeV2Instruction(
+	creatorAccount solanago.PublicKey,
+	creatorTokenAccountAccount solanago.PublicKey,
+	creatorVaultAccount solanago.PublicKey,
+	creatorVaultTokenAccountAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	associatedTokenProgramAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_CollectCreatorFeeV2[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "creator": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorAccount, true, false))
+		// Account 1 "creator_token_account": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorTokenAccountAccount, true, false))
+		// Account 2 "creator_vault": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorVaultAccount, true, false))
+		// Account 3 "creator_vault_token_account": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorVaultTokenAccountAccount, true, false))
+		// Account 4 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 5 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 6 "associated_token_program": Read-only, Non-signer, Required, Address: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+		accounts__.Append(solanago.NewAccountMeta(associatedTokenProgramAccount, false, false))
+		// Account 7 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 8 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 9 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "create" instruction.
 // Creates a new coin and bonding curve.
 func NewCreateInstruction(
@@ -1040,7 +1509,7 @@ func NewCreateInstruction(
 }
 
 // Builds a "create_v2" instruction.
-// Creates a new spl-22 coin and bonding curve.
+// Creates a new spl-22 coin and bonding curve. //  // Remaining accounts select the quote mint (none = SOL): `quote_mint`, // `associated_quote_bonding_curve`, `quote_token_program` (SPL Token or Token-2022; must own // the mint), plus an optional fourth account, the `quote-control` PDA, read only when `Global` // does not whitelist the mint. A mint admitted through quote-control seeds the curve's // virtual quote reserves from its quote-control entry instead of `Global`, and cannot be // used with `is_mayhem_mode` (`MayhemModeQuoteMintNotAllowed`). When neither list admits the // mint Q, an optional fifth account, Q's own pump `bonding-curve` PDA, admits a pump coin as // the quote (`InvalidQuoteBondingCurve` if it is not that PDA; missing keeps // `UnsupportedQuoteMint`): the new curve's depth, Q's depth plus one, must not exceed // `Global.max_curve_depth` or the program's cap of 5 (`CurveDepthExceeded`; 0 disables the // path, 1 admits children of depth-0 coins only), and Q's curve must not be mayhem mode // (`QuoteBondingCurveNotEligible`). The new curve's virtual quote reserves are then derived // from the live reserves of every coin on Q's quote chain, Q down to its depth-0 root R (Q // itself at depth 1), whose own quote must be SOL, a `Global`-whitelisted mint or a // quote-control mint (`QuoteBondingCurveNotEligible`): the graduation raise of a Target, the // seed a fresh curve in R's quote would get today, is bought on R's constant product, the R // tokens that returns are bought on the next coin up, and so on to Q; the Q tokens the last // buy returns are the new curve's graduation raise and its seed is that raise scaled back by // the curve's raise ratio. Each coin is priced over its curve `virtual_token_reserves` and // `virtual_quote_reserves` while its curve trades, a buy past its real token reserves // completing the curve at the remainder's price and continuing in the pool the migration // would create (the migration deposit against the raise, as `buy_v3` does), or over its // canonical pump-amm pool base vault balance and its quote vault balance plus // `Pool.virtual_quote_reserves` once it is migrated (a complete coin not yet migrated fails // `QuoteCurveAwaitingMigration`). The chain // follows Q's group: one group per coin below Q, nearest first, each the coin's // `bonding-curve` PDA alone while it trades or that PDA followed by its pool (index 0 under // pump's `pool-authority` PDA for the coin, quote seed WSOL for a SOL-quoted coin) and the // pool's base and quote vaults once migrated, Q's own pool accounts being the sixth to // eighth (`QuoteChainAccountsRequired`, `QuotePoolAccountsRequired`, `QuotePoolNotFound`, // `InvalidQuotePool`). The derived value must be at least 1 (`QuoteReservesOutOfRange`); each // buy returns less than that coin's token side, so there is no supply bound. The new curve // stores `depth = Q.depth + 1` and, like a quote-control coin, cannot be mayhem mode. The Token-2022 // native mint is rejected, and a Token-2022 quote mint may only carry the xStock operable // extension set (metadata pointer/metadata, permanent delegate, initialized default account // state, scaled UI amount, pausable, confidential-transfer mint, and a transfer hook with no // program). The trailing `creator_fee_bps` argument (EOF-tolerant) sets the coin's own creator // fee rate for a quote mint admitted through quote-control or through a pump coin's curve, // and then requires `Global.creator_fee_configurable`, a non-cashback coin and a value in // `1..=Global.max_configurable_creator_fee_bps`; on a SOL or `Global`-whitelisted quote it is // ignored, and omitted or zero stores 0 so the pump-fees schedule rate applies. // `is_cashback_enabled` is deprecated and must be false. `is_holder_reward` (EOF-tolerant, // gated by `Global.is_holder_reward_enabled`) sets the creator to the `holder-rewards` PDA // of the mint, so creator fees accrue to its creator vault, are collected onto the PDA with // `collect_creator_fee*` and paid out through `distribute_fee_to_holders`.
 func NewCreateV2Instruction(
 	// Params:
 	nameParam string,
@@ -1049,6 +1518,8 @@ func NewCreateV2Instruction(
 	creatorParam solanago.PublicKey,
 	isMayhemModeParam bool,
 	isCashbackEnabledParam OptionBool,
+	creatorFeeBpsParam OptionU64,
+	isHolderRewardParam OptionBool,
 
 	// Accounts:
 	mintAccount solanago.PublicKey,
@@ -1106,6 +1577,16 @@ func NewCreateV2Instruction(
 		err = enc__.Encode(isCashbackEnabledParam)
 		if err != nil {
 			return nil, errors.NewField("isCashbackEnabledParam", err)
+		}
+		// Serialize `creatorFeeBpsParam`:
+		err = enc__.Encode(creatorFeeBpsParam)
+		if err != nil {
+			return nil, errors.NewField("creatorFeeBpsParam", err)
+		}
+		// Serialize `isHolderRewardParam`:
+		err = enc__.Encode(isHolderRewardParam)
+		if err != nil {
+			return nil, errors.NewField("isHolderRewardParam", err)
 		}
 	}
 	accounts__ := solanago.AccountMetaSlice{}
@@ -1201,6 +1682,150 @@ func NewDistributeCreatorFeesInstruction(
 	), nil
 }
 
+// Builds a "distribute_creator_fees_v2" instruction.
+func NewDistributeCreatorFeesV2Instruction(
+	// Params:
+	initializeAtaParam bool,
+
+	// Accounts:
+	payerAccount solanago.PublicKey,
+	mintAccount solanago.PublicKey,
+	bondingCurveAccount solanago.PublicKey,
+	sharingConfigAccount solanago.PublicKey,
+	creatorVaultAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+	creatorVaultQuoteTokenAccountAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	associatedTokenProgramAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_DistributeCreatorFeesV2[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `initializeAtaParam`:
+		err = enc__.Encode(initializeAtaParam)
+		if err != nil {
+			return nil, errors.NewField("initializeAtaParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "payer": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(payerAccount, true, true))
+		// Account 1 "mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(mintAccount, false, false))
+		// Account 2 "bonding_curve": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, false, false))
+		// Account 3 "sharing_config": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(sharingConfigAccount, false, false))
+		// Account 4 "creator_vault": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(creatorVaultAccount, true, false))
+		// Account 5 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 6 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 7 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+		// Account 8 "creator_vault_quote_token_account": Writable, Non-signer, Required
+		// Deserialized manually in the handler for non-legacy quote mints.
+		accounts__.Append(solanago.NewAccountMeta(creatorVaultQuoteTokenAccountAccount, true, false))
+		// Account 9 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 10 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 11 "associated_token_program": Read-only, Non-signer, Required, Address: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+		accounts__.Append(solanago.NewAccountMeta(associatedTokenProgramAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "distribute_fee_to_holders" instruction.
+// Pays fees collected on the `holder-rewards` PDA (via `collect_creator_fee*` with the PDA // as creator) out to holders: `amounts[i]` goes to remaining accounts `[2i]` (owner) / // `[2i + 1]` (its quote ATA, created if missing). `holder_rewards_token_account` is any // quote token account owned by the PDA (normally its ATA): the source on a token quote, and // on a SOL quote a parked WSOL account closed into the PDA first; pass the program id when // there is none. Signed by `Global.holder_reward_claim_authority`.
+func NewDistributeFeeToHoldersInstruction(
+	// Params:
+	amountsParam []uint64,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	holderRewardClaimAuthorityAccount solanago.PublicKey,
+	mintAccount solanago.PublicKey,
+	holderRewardsAccount solanago.PublicKey,
+	holderRewardsTokenAccountAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	associatedTokenProgramAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_DistributeFeeToHolders[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `amountsParam`:
+		err = enc__.Encode(amountsParam)
+		if err != nil {
+			return nil, errors.NewField("amountsParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 1 "holder_reward_claim_authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(holderRewardClaimAuthorityAccount, true, true))
+		// Account 2 "mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(mintAccount, false, false))
+		// Account 3 "holder_rewards": Writable, Non-signer, Required
+		// deliver the collected fees here (lamports on a SOL quote)
+		accounts__.Append(solanago.NewAccountMeta(holderRewardsAccount, true, false))
+		// Account 4 "holder_rewards_token_account": Writable, Non-signer, Optional
+		accounts__.Append(solanago.NewAccountMeta(holderRewardsTokenAccountAccount, true, false))
+		// Account 5 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 6 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 7 "associated_token_program": Read-only, Non-signer, Required, Address: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+		accounts__.Append(solanago.NewAccountMeta(associatedTokenProgramAccount, false, false))
+		// Account 8 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 9 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 10 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "extend_account" instruction.
 // Extends the size of program-owned accounts
 func NewExtendAccountInstruction(
@@ -1224,8 +1849,8 @@ func NewExtendAccountInstruction(
 	{
 		// Account 0 "account": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(accountAccount, true, false))
-		// Account 1 "user": Read-only, Signer, Required
-		accounts__.Append(solanago.NewAccountMeta(userAccount, false, true))
+		// Account 1 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
 		// Account 2 "system_program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
 		// Account 3 "event_authority": Read-only, Non-signer, Required
@@ -1358,6 +1983,40 @@ func NewInitializeInstruction(
 	), nil
 }
 
+// Builds a "initialize_quote_control" instruction.
+func NewInitializeQuoteControlInstruction(
+	quoteControlAccount solanago.PublicKey,
+	userAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_InitializeQuoteControl[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "quote_control": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteControlAccount, true, false))
+		// Account 1 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
+		// Account 2 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "migrate" instruction.
 // Migrates liquidity to pump_amm if the bonding curve is complete
 func NewMigrateInstruction(
@@ -1409,8 +2068,8 @@ func NewMigrateInstruction(
 		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
 		// Account 4 "associated_bonding_curve": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(associatedBondingCurveAccount, true, false))
-		// Account 5 "user": Read-only, Signer, Required
-		accounts__.Append(solanago.NewAccountMeta(userAccount, false, true))
+		// Account 5 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
 		// Account 6 "system_program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
 		// Account 7 "token_program": Read-only, Non-signer, Required, Address: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
@@ -1556,8 +2215,8 @@ func NewMigrateV2Instruction(
 		accounts__.Append(solanago.NewAccountMeta(associatedBaseBondingCurveAccount, true, false))
 		// Account 6 "associated_quote_bonding_curve": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(associatedQuoteBondingCurveAccount, true, false))
-		// Account 7 "user": Read-only, Signer, Required
-		accounts__.Append(solanago.NewAccountMeta(userAccount, false, true))
+		// Account 7 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
 		// Account 8 "system_program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
 		// Account 9 "pump_amm": Read-only, Non-signer, Required, Address: pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA
@@ -1595,6 +2254,141 @@ func NewMigrateV2Instruction(
 		// Account 25 "event_authority": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
 		// Account 26 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "multi_hop_curve_swap" instruction.
+func NewMultiHopCurveSwapInstruction(
+	// Params:
+	amountInParam uint64,
+	hopFeesParam []byte,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	feeConfigAccount solanago.PublicKey,
+	pumpAmmGlobalConfigAccount solanago.PublicKey,
+	userAccount solanago.PublicKey,
+	sourceAuthorityAccount solanago.PublicKey,
+	sourceAccount solanago.PublicKey,
+	destinationAccount solanago.PublicKey,
+	buybackFeeRecipientAccount solanago.PublicKey,
+	tokenProgramAccount solanago.PublicKey,
+	token2022ProgramAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_MultiHopCurveSwap[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `amountInParam`:
+		err = enc__.Encode(amountInParam)
+		if err != nil {
+			return nil, errors.NewField("amountInParam", err)
+		}
+		// Serialize `hopFeesParam`:
+		err = enc__.Encode(hopFeesParam)
+		if err != nil {
+			return nil, errors.NewField("hopFeesParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 1 "fee_config": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(feeConfigAccount, false, false))
+		// Account 2 "pump_amm_global_config": Read-only, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(pumpAmmGlobalConfigAccount, false, true))
+		// Account 3 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
+		// Account 4 "source_authority": Read-only, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(sourceAuthorityAccount, false, true))
+		// Account 5 "source": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(sourceAccount, true, false))
+		// Account 6 "destination": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(destinationAccount, true, false))
+		// Account 7 "buyback_fee_recipient": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(buybackFeeRecipientAccount, true, false))
+		// Account 8 "token_program": Read-only, Non-signer, Required, Address: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
+		accounts__.Append(solanago.NewAccountMeta(tokenProgramAccount, false, false))
+		// Account 9 "token_2022_program": Read-only, Non-signer, Required, Address: TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
+		accounts__.Append(solanago.NewAccountMeta(token2022ProgramAccount, false, false))
+		// Account 10 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 11 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 12 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "remove_quote_control_mint" instruction.
+func NewRemoveQuoteControlMintInstruction(
+	// Params:
+	quoteMintParam solanago.PublicKey,
+
+	// Accounts:
+	authorityAccount solanago.PublicKey,
+	globalAccount solanago.PublicKey,
+	quoteControlAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_RemoveQuoteControlMint[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `quoteMintParam`:
+		err = enc__.Encode(quoteMintParam)
+		if err != nil {
+			return nil, errors.NewField("quoteMintParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, true, true))
+		// Account 1 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 2 "quote_control": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteControlAccount, true, false))
+		// Account 3 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 4 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 5 "program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
 	}
 
@@ -1828,6 +2622,8 @@ func NewSellV2Instruction(
 		// Account 14 "associated_base_user": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(associatedBaseUserAccount, true, false))
 		// Account 15 "associated_quote_user": Writable, Non-signer, Required
+		// canonical SPL associated-token PDA. Validated in `sell_v2_ix` via
+		// `validate_user_quote_token_account` for non-legacy mints; ignored for legacy (SOL) trades.
 		accounts__.Append(solanago.NewAccountMeta(associatedQuoteUserAccount, true, false))
 		// Account 16 "creator_vault": Writable, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(creatorVaultAccount, true, false))
@@ -1851,6 +2647,102 @@ func NewSellV2Instruction(
 		// Account 24 "event_authority": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
 		// Account 25 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "sell_v3" instruction.
+func NewSellV3Instruction(
+	// Params:
+	amountParam uint64,
+	minSolOutputParam uint64,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	baseMintAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	baseTokenProgramAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	bondingCurveAccount solanago.PublicKey,
+	associatedBaseBondingCurveAccount solanago.PublicKey,
+	associatedQuoteBondingCurveAccount solanago.PublicKey,
+	userAccount solanago.PublicKey,
+	associatedBaseUserAccount solanago.PublicKey,
+	associatedQuoteUserAccount solanago.PublicKey,
+	userVolumeAccumulatorAccount solanago.PublicKey,
+	feeConfigAccount solanago.PublicKey,
+	buybackFeeRecipientAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SellV3[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `amountParam`:
+		err = enc__.Encode(amountParam)
+		if err != nil {
+			return nil, errors.NewField("amountParam", err)
+		}
+		// Serialize `minSolOutputParam`:
+		err = enc__.Encode(minSolOutputParam)
+		if err != nil {
+			return nil, errors.NewField("minSolOutputParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 1 "base_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseMintAccount, false, false))
+		// Account 2 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 3 "base_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseTokenProgramAccount, false, false))
+		// Account 4 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 5 "bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
+		// Account 6 "associated_base_bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(associatedBaseBondingCurveAccount, true, false))
+		// Account 7 "associated_quote_bonding_curve": Writable, Non-signer, Required
+		// Must already exist on a token quote (create_v2 creates it); ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteBondingCurveAccount, true, false))
+		// Account 8 "user": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userAccount, true, true))
+		// Account 9 "associated_base_user": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(associatedBaseUserAccount, true, false))
+		// Account 10 "associated_quote_user": Writable, Non-signer, Required
+		// canonical SPL associated-token PDA. Validated in the handlers via
+		// `validate_user_quote_token_account` for non-legacy mints; ignored for legacy (SOL) trades.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteUserAccount, true, false))
+		// Account 11 "user_volume_accumulator": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(userVolumeAccumulatorAccount, true, false))
+		// Account 12 "fee_config": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(feeConfigAccount, false, false))
+		// Account 13 "buyback_fee_recipient": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(buybackFeeRecipientAccount, true, false))
+		// Account 14 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 15 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 16 "program": Read-only, Non-signer, Required, Address: 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
 	}
 
@@ -1909,6 +2801,54 @@ func NewSetCreatorInstruction(
 		// Account 5 "event_authority": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
 		// Account 6 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "set_max_curve_depth" instruction.
+func NewSetMaxCurveDepthInstruction(
+	// Params:
+	maxCurveDepthParam uint8,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	authorityAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SetMaxCurveDepth[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `maxCurveDepthParam`:
+		err = enc__.Encode(maxCurveDepthParam)
+		if err != nil {
+			return nil, errors.NewField("maxCurveDepthParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, true, false))
+		// Account 1 "authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, true, true))
+		// Account 2 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 3 "program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
 	}
 
@@ -2119,6 +3059,165 @@ func NewSetParamsInstruction(
 	), nil
 }
 
+// Builds a "set_quote_control_admin" instruction.
+func NewSetQuoteControlAdminInstruction(
+	// Params:
+	newAdminParam solanago.PublicKey,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	authorityAccount solanago.PublicKey,
+	quoteControlAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SetQuoteControlAdmin[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `newAdminParam`:
+		err = enc__.Encode(newAdminParam)
+		if err != nil {
+			return nil, errors.NewField("newAdminParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 1 "authority": Read-only, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, false, true))
+		// Account 2 "quote_control": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteControlAccount, true, false))
+		// Account 3 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 4 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "set_quote_control_mint_reserves" instruction.
+func NewSetQuoteControlMintReservesInstruction(
+	// Params:
+	quoteMintParam solanago.PublicKey,
+	initialVirtualQuoteReservesParam uint64,
+
+	// Accounts:
+	authorityAccount solanago.PublicKey,
+	globalAccount solanago.PublicKey,
+	quoteControlAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SetQuoteControlMintReserves[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `quoteMintParam`:
+		err = enc__.Encode(quoteMintParam)
+		if err != nil {
+			return nil, errors.NewField("quoteMintParam", err)
+		}
+		// Serialize `initialVirtualQuoteReservesParam`:
+		err = enc__.Encode(initialVirtualQuoteReservesParam)
+		if err != nil {
+			return nil, errors.NewField("initialVirtualQuoteReservesParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "authority": Read-only, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, false, true))
+		// Account 1 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 2 "quote_control": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteControlAccount, true, false))
+		// Account 3 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 4 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "set_quote_control_reserves_admin" instruction.
+func NewSetQuoteControlReservesAdminInstruction(
+	// Params:
+	newReservesAdminParam solanago.PublicKey,
+
+	// Accounts:
+	authorityAccount solanago.PublicKey,
+	globalAccount solanago.PublicKey,
+	quoteControlAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SetQuoteControlReservesAdmin[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `newReservesAdminParam`:
+		err = enc__.Encode(newReservesAdminParam)
+		if err != nil {
+			return nil, errors.NewField("newReservesAdminParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "authority": Read-only, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, false, true))
+		// Account 1 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 2 "quote_control": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteControlAccount, true, false))
+		// Account 3 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 4 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "set_reserved_fee_recipients" instruction.
 func NewSetReservedFeeRecipientsInstruction(
 	// Params:
@@ -2204,6 +3303,140 @@ func NewSetVirtualQuoteReservesInstruction(
 		// Account 2 "event_authority": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
 		// Account 3 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "sweep_creator_fee" instruction.
+func NewSweepCreatorFeeInstruction(
+	payerAccount solanago.PublicKey,
+	globalAccount solanago.PublicKey,
+	baseMintAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	associatedTokenProgramAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	bondingCurveAccount solanago.PublicKey,
+	associatedQuoteBondingCurveAccount solanago.PublicKey,
+	recipientAccount solanago.PublicKey,
+	associatedQuoteRecipientAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SweepCreatorFee[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "payer": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(payerAccount, true, true))
+		// Account 1 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 2 "base_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseMintAccount, false, false))
+		// Account 3 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 4 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 5 "associated_token_program": Read-only, Non-signer, Required, Address: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+		accounts__.Append(solanago.NewAccountMeta(associatedTokenProgramAccount, false, false))
+		// Account 6 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 7 "bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
+		// Account 8 "associated_quote_bonding_curve": Writable, Non-signer, Required
+		// the source on a token quote, ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteBondingCurveAccount, true, false))
+		// Account 9 "recipient": Writable, Non-signer, Required
+		// recipient (`check_fee_recipient`) or the creator vault PDA of `bonding_curve.creator`.
+		accounts__.Append(solanago.NewAccountMeta(recipientAccount, true, false))
+		// Account 10 "associated_quote_recipient": Writable, Non-signer, Required
+		// created idempotently on a token quote, ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteRecipientAccount, true, false))
+		// Account 11 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 12 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+// Builds a "sweep_protocol_fee" instruction.
+func NewSweepProtocolFeeInstruction(
+	payerAccount solanago.PublicKey,
+	globalAccount solanago.PublicKey,
+	baseMintAccount solanago.PublicKey,
+	quoteMintAccount solanago.PublicKey,
+	quoteTokenProgramAccount solanago.PublicKey,
+	associatedTokenProgramAccount solanago.PublicKey,
+	systemProgramAccount solanago.PublicKey,
+	bondingCurveAccount solanago.PublicKey,
+	associatedQuoteBondingCurveAccount solanago.PublicKey,
+	recipientAccount solanago.PublicKey,
+	associatedQuoteRecipientAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_SweepProtocolFee[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "payer": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(payerAccount, true, true))
+		// Account 1 "global": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, false, false))
+		// Account 2 "base_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(baseMintAccount, false, false))
+		// Account 3 "quote_mint": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteMintAccount, false, false))
+		// Account 4 "quote_token_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(quoteTokenProgramAccount, false, false))
+		// Account 5 "associated_token_program": Read-only, Non-signer, Required, Address: ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL
+		accounts__.Append(solanago.NewAccountMeta(associatedTokenProgramAccount, false, false))
+		// Account 6 "system_program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(systemProgramAccount, false, false))
+		// Account 7 "bonding_curve": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(bondingCurveAccount, true, false))
+		// Account 8 "associated_quote_bonding_curve": Writable, Non-signer, Required
+		// the source on a token quote, ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteBondingCurveAccount, true, false))
+		// Account 9 "recipient": Writable, Non-signer, Required
+		// recipient (`check_fee_recipient`) or the creator vault PDA of `bonding_curve.creator`.
+		accounts__.Append(solanago.NewAccountMeta(recipientAccount, true, false))
+		// Account 10 "associated_quote_recipient": Writable, Non-signer, Required
+		// created idempotently on a token quote, ignored on a SOL quote.
+		accounts__.Append(solanago.NewAccountMeta(associatedQuoteRecipientAccount, true, false))
+		// Account 11 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 12 "program": Read-only, Non-signer, Required
 		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
 	}
 
@@ -2460,6 +3693,60 @@ func NewUpdateBuybackConfigInstruction(
 	), nil
 }
 
+// Builds a "update_creator_fee_config" instruction.
+func NewUpdateCreatorFeeConfigInstruction(
+	// Params:
+	creatorFeeConfigurableParam bool,
+	maxConfigurableCreatorFeeBpsParam uint64,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	authorityAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_UpdateCreatorFeeConfig[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `creatorFeeConfigurableParam`:
+		err = enc__.Encode(creatorFeeConfigurableParam)
+		if err != nil {
+			return nil, errors.NewField("creatorFeeConfigurableParam", err)
+		}
+		// Serialize `maxConfigurableCreatorFeeBpsParam`:
+		err = enc__.Encode(maxConfigurableCreatorFeeBpsParam)
+		if err != nil {
+			return nil, errors.NewField("maxConfigurableCreatorFeeBpsParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, true, false))
+		// Account 1 "authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, true, true))
+		// Account 2 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 3 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
 // Builds a "update_global_authority" instruction.
 func NewUpdateGlobalAuthorityInstruction(
 	globalAccount solanago.PublicKey,
@@ -2498,6 +3785,232 @@ func NewUpdateGlobalAuthorityInstruction(
 		accounts__,
 		buf__.Bytes(),
 	), nil
+}
+
+// Builds a "update_holder_reward_config" instruction.
+func NewUpdateHolderRewardConfigInstruction(
+	// Params:
+	isHolderRewardEnabledParam bool,
+	holderRewardClaimAuthorityParam solanago.PublicKey,
+
+	// Accounts:
+	globalAccount solanago.PublicKey,
+	authorityAccount solanago.PublicKey,
+	eventAuthorityAccount solanago.PublicKey,
+	programAccount solanago.PublicKey,
+) (solanago.Instruction, error) {
+	buf__ := new(bytes.Buffer)
+	enc__ := binary.NewBorshEncoder(buf__)
+
+	// Encode the instruction discriminator.
+	err := enc__.WriteBytes(Instruction_UpdateHolderRewardConfig[:], false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write instruction discriminator: %w", err)
+	}
+	{
+		// Serialize `isHolderRewardEnabledParam`:
+		err = enc__.Encode(isHolderRewardEnabledParam)
+		if err != nil {
+			return nil, errors.NewField("isHolderRewardEnabledParam", err)
+		}
+		// Serialize `holderRewardClaimAuthorityParam`:
+		err = enc__.Encode(holderRewardClaimAuthorityParam)
+		if err != nil {
+			return nil, errors.NewField("holderRewardClaimAuthorityParam", err)
+		}
+	}
+	accounts__ := solanago.AccountMetaSlice{}
+
+	// Add the accounts to the instruction.
+	{
+		// Account 0 "global": Writable, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(globalAccount, true, false))
+		// Account 1 "authority": Writable, Signer, Required
+		accounts__.Append(solanago.NewAccountMeta(authorityAccount, true, true))
+		// Account 2 "event_authority": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(eventAuthorityAccount, false, false))
+		// Account 3 "program": Read-only, Non-signer, Required
+		accounts__.Append(solanago.NewAccountMeta(programAccount, false, false))
+	}
+
+	// Create the instruction.
+	return solanago.NewInstruction(
+		ProgramID,
+		accounts__,
+		buf__.Bytes(),
+	), nil
+}
+
+type AddQuoteControlMintInstruction struct {
+	QuoteMint                   solanago.PublicKey `json:"quote_mint"`
+	InitialVirtualQuoteReserves uint64             `json:"initial_virtual_quote_reserves"`
+
+	// Accounts:
+	Authority            solanago.PublicKey `json:"authority"`
+	AuthorityWritable    bool               `json:"authority_writable"`
+	AuthoritySigner      bool               `json:"authority_signer"`
+	Global               solanago.PublicKey `json:"global"`
+	QuoteControl         solanago.PublicKey `json:"quote_control"`
+	QuoteControlWritable bool               `json:"quote_control_writable"`
+	SystemProgram        solanago.PublicKey `json:"system_program"`
+	EventAuthority       solanago.PublicKey `json:"event_authority"`
+	Program              solanago.PublicKey `json:"program"`
+}
+
+func (obj *AddQuoteControlMintInstruction) GetDiscriminator() []byte {
+	return Instruction_AddQuoteControlMint[:]
+}
+
+// UnmarshalWithDecoder unmarshals the AddQuoteControlMintInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *AddQuoteControlMintInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "AddQuoteControlMintInstruction", err)
+	}
+	if discriminator != Instruction_AddQuoteControlMint {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "AddQuoteControlMintInstruction", Instruction_AddQuoteControlMint, discriminator)
+	}
+	// Deserialize `QuoteMint`:
+	err = decoder.Decode(&obj.QuoteMint)
+	if err != nil {
+		return err
+	}
+	// Deserialize `InitialVirtualQuoteReserves`:
+	err = decoder.Decode(&obj.InitialVirtualQuoteReserves)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *AddQuoteControlMintInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_control account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_control", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *AddQuoteControlMintInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 6 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 6, len(indices))
+	}
+	indexOffset := 0
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_control account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_control", len(accountKeys)-1)
+	}
+	obj.QuoteControl = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *AddQuoteControlMintInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.QuoteControl)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the AddQuoteControlMintInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *AddQuoteControlMintInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling AddQuoteControlMintInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalAddQuoteControlMintInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalAddQuoteControlMintInstruction(buf []byte) (*AddQuoteControlMintInstruction, error) {
+	obj := new(AddQuoteControlMintInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 type AddQuoteMintInstruction struct {
@@ -2636,44 +4149,110 @@ func UnmarshalAddQuoteMintInstruction(buf []byte) (*AddQuoteMintInstruction, err
 	return obj, nil
 }
 
-type AdminSetCreatorInstruction struct {
-	Creator solanago.PublicKey `json:"creator"`
+type AdminCtoInstruction struct {
+	IsHolderReward *bool               `json:"is_holder_reward"`
+	CreatorFeeBps  *uint64             `json:"creator_fee_bps"`
+	NewCreator     *solanago.PublicKey `json:"new_creator"`
 
 	// Accounts:
-	AdminSetCreatorAuthority       solanago.PublicKey `json:"admin_set_creator_authority"`
-	AdminSetCreatorAuthoritySigner bool               `json:"admin_set_creator_authority_signer"`
-	Global                         solanago.PublicKey `json:"global"`
-	Mint                           solanago.PublicKey `json:"mint"`
-	BondingCurve                   solanago.PublicKey `json:"bonding_curve"`
-	BondingCurveWritable           bool               `json:"bonding_curve_writable"`
-	EventAuthority                 solanago.PublicKey `json:"event_authority"`
-	Program                        solanago.PublicKey `json:"program"`
+	AdminSetCreatorAuthority                    solanago.PublicKey `json:"admin_set_creator_authority"`
+	AdminSetCreatorAuthorityWritable            bool               `json:"admin_set_creator_authority_writable"`
+	AdminSetCreatorAuthoritySigner              bool               `json:"admin_set_creator_authority_signer"`
+	Global                                      solanago.PublicKey `json:"global"`
+	Mint                                        solanago.PublicKey `json:"mint"`
+	QuoteMint                                   solanago.PublicKey `json:"quote_mint"`
+	QuoteTokenProgram                           solanago.PublicKey `json:"quote_token_program"`
+	AssociatedTokenProgram                      solanago.PublicKey `json:"associated_token_program"`
+	SystemProgram                               solanago.PublicKey `json:"system_program"`
+	BondingCurve                                solanago.PublicKey `json:"bonding_curve"`
+	BondingCurveWritable                        bool               `json:"bonding_curve_writable"`
+	CurrentCreator                              solanago.PublicKey `json:"current_creator"`
+	CurrentCreatorQuoteTokenAccount             solanago.PublicKey `json:"current_creator_quote_token_account"`
+	CurrentCreatorQuoteTokenAccountWritable     bool               `json:"current_creator_quote_token_account_writable"`
+	CreatorVault                                solanago.PublicKey `json:"creator_vault"`
+	CreatorVaultWritable                        bool               `json:"creator_vault_writable"`
+	CreatorVaultQuoteTokenAccount               solanago.PublicKey `json:"creator_vault_quote_token_account"`
+	CreatorVaultQuoteTokenAccountWritable       bool               `json:"creator_vault_quote_token_account_writable"`
+	HolderCreatorVault                          solanago.PublicKey `json:"holder_creator_vault"`
+	HolderCreatorVaultWritable                  bool               `json:"holder_creator_vault_writable"`
+	HolderCreatorVaultQuoteTokenAccount         solanago.PublicKey `json:"holder_creator_vault_quote_token_account"`
+	HolderCreatorVaultQuoteTokenAccountWritable bool               `json:"holder_creator_vault_quote_token_account_writable"`
+	PumpAmm                                     solanago.PublicKey `json:"pump_amm"`
+	AmmGlobalConfig                             solanago.PublicKey `json:"amm_global_config"`
+	PoolAuthority                               solanago.PublicKey `json:"pool_authority"`
+	Pool                                        solanago.PublicKey `json:"pool"`
+	PoolWritable                                bool               `json:"pool_writable"`
+	PumpAmmEventAuthority                       solanago.PublicKey `json:"pump_amm_event_authority"`
+	CoinCreatorVaultAuthority                   solanago.PublicKey `json:"coin_creator_vault_authority"`
+	CoinCreatorVaultAuthorityWritable           bool               `json:"coin_creator_vault_authority_writable"`
+	CoinCreatorVaultAta                         solanago.PublicKey `json:"coin_creator_vault_ata"`
+	CoinCreatorVaultAtaWritable                 bool               `json:"coin_creator_vault_ata_writable"`
+	SharingConfig                               solanago.PublicKey `json:"sharing_config"`
+	SharingConfigWritable                       bool               `json:"sharing_config_writable"`
+	PumpFees                                    solanago.PublicKey `json:"pump_fees"`
+	PumpFeesEventAuthority                      solanago.PublicKey `json:"pump_fees_event_authority"`
+	EventAuthority                              solanago.PublicKey `json:"event_authority"`
+	Program                                     solanago.PublicKey `json:"program"`
 }
 
-func (obj *AdminSetCreatorInstruction) GetDiscriminator() []byte {
-	return Instruction_AdminSetCreator[:]
+func (obj *AdminCtoInstruction) GetDiscriminator() []byte {
+	return Instruction_AdminCto[:]
 }
 
-// UnmarshalWithDecoder unmarshals the AdminSetCreatorInstruction from Borsh-encoded bytes prefixed with its discriminator.
-func (obj *AdminSetCreatorInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+// UnmarshalWithDecoder unmarshals the AdminCtoInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *AdminCtoInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
 	var err error
 	// Read the discriminator and check it against the expected value:
 	discriminator, err := decoder.ReadDiscriminator()
 	if err != nil {
-		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "AdminSetCreatorInstruction", err)
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "AdminCtoInstruction", err)
 	}
-	if discriminator != Instruction_AdminSetCreator {
-		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "AdminSetCreatorInstruction", Instruction_AdminSetCreator, discriminator)
+	if discriminator != Instruction_AdminCto {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "AdminCtoInstruction", Instruction_AdminCto, discriminator)
 	}
-	// Deserialize `Creator`:
-	err = decoder.Decode(&obj.Creator)
-	if err != nil {
-		return err
+	// Deserialize `IsHolderReward`:
+	{
+		ok, err := decoder.ReadOption()
+		if err != nil {
+			return err
+		}
+		if ok {
+			err = decoder.Decode(&obj.IsHolderReward)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// Deserialize `CreatorFeeBps`:
+	{
+		ok, err := decoder.ReadOption()
+		if err != nil {
+			return err
+		}
+		if ok {
+			err = decoder.Decode(&obj.CreatorFeeBps)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// Deserialize `NewCreator`:
+	{
+		ok, err := decoder.ReadOption()
+		if err != nil {
+			return err
+		}
+		if ok {
+			err = decoder.Decode(&obj.NewCreator)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
 
-func (obj *AdminSetCreatorInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+func (obj *AdminCtoInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
 	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
 	decoder := binary.NewBorshDecoder(buf)
 	indices := make([]uint8, 0)
@@ -2700,11 +4279,151 @@ func (obj *AdminSetCreatorInstruction) UnmarshalAccountIndices(buf []byte) ([]ui
 		return nil, fmt.Errorf("failed to decode %s account index: %w", "mint", err)
 	}
 	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
 	// Decode from bonding_curve account index
 	index = uint8(0)
 	err = decoder.Decode(&index)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from current_creator account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "current_creator", err)
+	}
+	indices = append(indices, index)
+	// Decode from current_creator_quote_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "current_creator_quote_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_vault account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_vault", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_vault_quote_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_vault_quote_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from holder_creator_vault account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "holder_creator_vault", err)
+	}
+	indices = append(indices, index)
+	// Decode from holder_creator_vault_quote_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "holder_creator_vault_quote_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from pump_amm account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pump_amm", err)
+	}
+	indices = append(indices, index)
+	// Decode from amm_global_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "amm_global_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from pool_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pool_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from pool account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pool", err)
+	}
+	indices = append(indices, index)
+	// Decode from pump_amm_event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pump_amm_event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from coin_creator_vault_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "coin_creator_vault_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from coin_creator_vault_ata account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "coin_creator_vault_ata", err)
+	}
+	indices = append(indices, index)
+	// Decode from sharing_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "sharing_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from pump_fees account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pump_fees", err)
+	}
+	indices = append(indices, index)
+	// Decode from pump_fees_event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pump_fees_event_authority", err)
 	}
 	indices = append(indices, index)
 	// Decode from event_authority account index
@@ -2724,10 +4443,10 @@ func (obj *AdminSetCreatorInstruction) UnmarshalAccountIndices(buf []byte) ([]ui
 	return indices, nil
 }
 
-func (obj *AdminSetCreatorInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+func (obj *AdminCtoInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
 	// PopulateFromAccountIndices sets account public keys from indices and account keys array
-	if len(indices) != 6 {
-		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 6, len(indices))
+	if len(indices) != 26 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 26, len(indices))
 	}
 	indexOffset := 0
 	// Set admin_set_creator_authority account from index
@@ -2748,11 +4467,131 @@ func (obj *AdminSetCreatorInstruction) PopulateFromAccountIndices(indices []uint
 	}
 	obj.Mint = accountKeys[indices[indexOffset]]
 	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_token_program", len(accountKeys)-1)
+	}
+	obj.AssociatedTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
 	// Set bonding_curve account from index
 	if indices[indexOffset] >= uint8(len(accountKeys)) {
 		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
 	}
 	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set current_creator account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "current_creator", len(accountKeys)-1)
+	}
+	obj.CurrentCreator = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set current_creator_quote_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "current_creator_quote_token_account", len(accountKeys)-1)
+	}
+	obj.CurrentCreatorQuoteTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_vault account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_vault", len(accountKeys)-1)
+	}
+	obj.CreatorVault = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_vault_quote_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_vault_quote_token_account", len(accountKeys)-1)
+	}
+	obj.CreatorVaultQuoteTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set holder_creator_vault account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "holder_creator_vault", len(accountKeys)-1)
+	}
+	obj.HolderCreatorVault = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set holder_creator_vault_quote_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "holder_creator_vault_quote_token_account", len(accountKeys)-1)
+	}
+	obj.HolderCreatorVaultQuoteTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pump_amm account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pump_amm", len(accountKeys)-1)
+	}
+	obj.PumpAmm = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set amm_global_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "amm_global_config", len(accountKeys)-1)
+	}
+	obj.AmmGlobalConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pool_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pool_authority", len(accountKeys)-1)
+	}
+	obj.PoolAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pool account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pool", len(accountKeys)-1)
+	}
+	obj.Pool = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pump_amm_event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pump_amm_event_authority", len(accountKeys)-1)
+	}
+	obj.PumpAmmEventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set coin_creator_vault_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "coin_creator_vault_authority", len(accountKeys)-1)
+	}
+	obj.CoinCreatorVaultAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set coin_creator_vault_ata account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "coin_creator_vault_ata", len(accountKeys)-1)
+	}
+	obj.CoinCreatorVaultAta = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set sharing_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "sharing_config", len(accountKeys)-1)
+	}
+	obj.SharingConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pump_fees account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pump_fees", len(accountKeys)-1)
+	}
+	obj.PumpFees = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pump_fees_event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pump_fees_event_authority", len(accountKeys)-1)
+	}
+	obj.PumpFeesEventAuthority = accountKeys[indices[indexOffset]]
 	indexOffset++
 	// Set event_authority account from index
 	if indices[indexOffset] >= uint8(len(accountKeys)) {
@@ -2769,30 +4608,50 @@ func (obj *AdminSetCreatorInstruction) PopulateFromAccountIndices(indices []uint
 	return nil
 }
 
-func (obj *AdminSetCreatorInstruction) GetAccountKeys() []solanago.PublicKey {
+func (obj *AdminCtoInstruction) GetAccountKeys() []solanago.PublicKey {
 	keys := make([]solanago.PublicKey, 0)
 	keys = append(keys, obj.AdminSetCreatorAuthority)
 	keys = append(keys, obj.Global)
 	keys = append(keys, obj.Mint)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.AssociatedTokenProgram)
+	keys = append(keys, obj.SystemProgram)
 	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.CurrentCreator)
+	keys = append(keys, obj.CurrentCreatorQuoteTokenAccount)
+	keys = append(keys, obj.CreatorVault)
+	keys = append(keys, obj.CreatorVaultQuoteTokenAccount)
+	keys = append(keys, obj.HolderCreatorVault)
+	keys = append(keys, obj.HolderCreatorVaultQuoteTokenAccount)
+	keys = append(keys, obj.PumpAmm)
+	keys = append(keys, obj.AmmGlobalConfig)
+	keys = append(keys, obj.PoolAuthority)
+	keys = append(keys, obj.Pool)
+	keys = append(keys, obj.PumpAmmEventAuthority)
+	keys = append(keys, obj.CoinCreatorVaultAuthority)
+	keys = append(keys, obj.CoinCreatorVaultAta)
+	keys = append(keys, obj.SharingConfig)
+	keys = append(keys, obj.PumpFees)
+	keys = append(keys, obj.PumpFeesEventAuthority)
 	keys = append(keys, obj.EventAuthority)
 	keys = append(keys, obj.Program)
 	return keys
 }
 
-// Unmarshal unmarshals the AdminSetCreatorInstruction from Borsh-encoded bytes prefixed with the discriminator.
-func (obj *AdminSetCreatorInstruction) Unmarshal(buf []byte) error {
+// Unmarshal unmarshals the AdminCtoInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *AdminCtoInstruction) Unmarshal(buf []byte) error {
 	var err error
 	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
 	if err != nil {
-		return fmt.Errorf("error while unmarshaling AdminSetCreatorInstruction: %w", err)
+		return fmt.Errorf("error while unmarshaling AdminCtoInstruction: %w", err)
 	}
 	return nil
 }
 
-// UnmarshalAdminSetCreatorInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
-func UnmarshalAdminSetCreatorInstruction(buf []byte) (*AdminSetCreatorInstruction, error) {
-	obj := new(AdminSetCreatorInstruction)
+// UnmarshalAdminCtoInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalAdminCtoInstruction(buf []byte) (*AdminCtoInstruction, error) {
+	obj := new(AdminCtoInstruction)
 	var err error
 	err = obj.Unmarshal(buf)
 	if err != nil {
@@ -3236,6 +5095,7 @@ type BuyInstruction struct {
 	Amount      uint64     `json:"amount"`
 	MaxSolCost  uint64     `json:"max_sol_cost"`
 	TrackVolume OptionBool `json:"track_volume"`
+	PartialFill OptionBool `json:"partial_fill"`
 
 	// Accounts:
 	Global                         solanago.PublicKey `json:"global"`
@@ -3291,6 +5151,11 @@ func (obj *BuyInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
 	}
 	// Deserialize `TrackVolume`:
 	err = decoder.Decode(&obj.TrackVolume)
+	if err != nil {
+		return err
+	}
+	// Deserialize `PartialFill`:
+	err = decoder.Decode(&obj.PartialFill)
 	if err != nil {
 		return err
 	}
@@ -3566,8 +5431,9 @@ func UnmarshalBuyInstruction(buf []byte) (*BuyInstruction, error) {
 }
 
 type BuyExactQuoteInV2Instruction struct {
-	SpendableQuoteIn uint64 `json:"spendable_quote_in"`
-	MinTokensOut     uint64 `json:"min_tokens_out"`
+	SpendableQuoteIn uint64     `json:"spendable_quote_in"`
+	MinTokensOut     uint64     `json:"min_tokens_out"`
+	PartialFill      OptionBool `json:"partial_fill"`
 
 	// Accounts:
 	Global                                     solanago.PublicKey `json:"global"`
@@ -3636,6 +5502,11 @@ func (obj *BuyExactQuoteInV2Instruction) UnmarshalWithDecoder(decoder *binary.De
 	}
 	// Deserialize `MinTokensOut`:
 	err = decoder.Decode(&obj.MinTokensOut)
+	if err != nil {
+		return err
+	}
+	// Deserialize `PartialFill`:
+	err = decoder.Decode(&obj.PartialFill)
 	if err != nil {
 		return err
 	}
@@ -4064,10 +5935,360 @@ func UnmarshalBuyExactQuoteInV2Instruction(buf []byte) (*BuyExactQuoteInV2Instru
 	return obj, nil
 }
 
+type BuyExactQuoteInV3Instruction struct {
+	SpendableQuoteIn uint64     `json:"spendable_quote_in"`
+	MinTokensOut     uint64     `json:"min_tokens_out"`
+	PartialFill      OptionBool `json:"partial_fill"`
+
+	// Accounts:
+	Global                              solanago.PublicKey `json:"global"`
+	BaseMint                            solanago.PublicKey `json:"base_mint"`
+	QuoteMint                           solanago.PublicKey `json:"quote_mint"`
+	BaseTokenProgram                    solanago.PublicKey `json:"base_token_program"`
+	QuoteTokenProgram                   solanago.PublicKey `json:"quote_token_program"`
+	BondingCurve                        solanago.PublicKey `json:"bonding_curve"`
+	BondingCurveWritable                bool               `json:"bonding_curve_writable"`
+	AssociatedBaseBondingCurve          solanago.PublicKey `json:"associated_base_bonding_curve"`
+	AssociatedBaseBondingCurveWritable  bool               `json:"associated_base_bonding_curve_writable"`
+	AssociatedQuoteBondingCurve         solanago.PublicKey `json:"associated_quote_bonding_curve"`
+	AssociatedQuoteBondingCurveWritable bool               `json:"associated_quote_bonding_curve_writable"`
+	User                                solanago.PublicKey `json:"user"`
+	UserWritable                        bool               `json:"user_writable"`
+	UserSigner                          bool               `json:"user_signer"`
+	AssociatedBaseUser                  solanago.PublicKey `json:"associated_base_user"`
+	AssociatedBaseUserWritable          bool               `json:"associated_base_user_writable"`
+	AssociatedQuoteUser                 solanago.PublicKey `json:"associated_quote_user"`
+	AssociatedQuoteUserWritable         bool               `json:"associated_quote_user_writable"`
+	UserVolumeAccumulator               solanago.PublicKey `json:"user_volume_accumulator"`
+	UserVolumeAccumulatorWritable       bool               `json:"user_volume_accumulator_writable"`
+	FeeConfig                           solanago.PublicKey `json:"fee_config"`
+	BuybackFeeRecipient                 solanago.PublicKey `json:"buyback_fee_recipient"`
+	BuybackFeeRecipientWritable         bool               `json:"buyback_fee_recipient_writable"`
+	SystemProgram                       solanago.PublicKey `json:"system_program"`
+	EventAuthority                      solanago.PublicKey `json:"event_authority"`
+	Program                             solanago.PublicKey `json:"program"`
+}
+
+func (obj *BuyExactQuoteInV3Instruction) GetDiscriminator() []byte {
+	return Instruction_BuyExactQuoteInV3[:]
+}
+
+// UnmarshalWithDecoder unmarshals the BuyExactQuoteInV3Instruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *BuyExactQuoteInV3Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "BuyExactQuoteInV3Instruction", err)
+	}
+	if discriminator != Instruction_BuyExactQuoteInV3 {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "BuyExactQuoteInV3Instruction", Instruction_BuyExactQuoteInV3, discriminator)
+	}
+	// Deserialize `SpendableQuoteIn`:
+	err = decoder.Decode(&obj.SpendableQuoteIn)
+	if err != nil {
+		return err
+	}
+	// Deserialize `MinTokensOut`:
+	err = decoder.Decode(&obj.MinTokensOut)
+	if err != nil {
+		return err
+	}
+	// Deserialize `PartialFill`:
+	err = decoder.Decode(&obj.PartialFill)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *BuyExactQuoteInV3Instruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_base_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_base_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_base_user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_base_user", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_user", err)
+	}
+	indices = append(indices, index)
+	// Decode from user_volume_accumulator account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user_volume_accumulator", err)
+	}
+	indices = append(indices, index)
+	// Decode from fee_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "fee_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from buyback_fee_recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "buyback_fee_recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *BuyExactQuoteInV3Instruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 17 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 17, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_mint", len(accountKeys)-1)
+	}
+	obj.BaseMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_token_program", len(accountKeys)-1)
+	}
+	obj.BaseTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
+	}
+	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_base_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_base_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedBaseBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user", len(accountKeys)-1)
+	}
+	obj.User = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_base_user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_base_user", len(accountKeys)-1)
+	}
+	obj.AssociatedBaseUser = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_user", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteUser = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user_volume_accumulator account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user_volume_accumulator", len(accountKeys)-1)
+	}
+	obj.UserVolumeAccumulator = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set fee_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "fee_config", len(accountKeys)-1)
+	}
+	obj.FeeConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set buyback_fee_recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "buyback_fee_recipient", len(accountKeys)-1)
+	}
+	obj.BuybackFeeRecipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *BuyExactQuoteInV3Instruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.BaseMint)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.BaseTokenProgram)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.AssociatedBaseBondingCurve)
+	keys = append(keys, obj.AssociatedQuoteBondingCurve)
+	keys = append(keys, obj.User)
+	keys = append(keys, obj.AssociatedBaseUser)
+	keys = append(keys, obj.AssociatedQuoteUser)
+	keys = append(keys, obj.UserVolumeAccumulator)
+	keys = append(keys, obj.FeeConfig)
+	keys = append(keys, obj.BuybackFeeRecipient)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the BuyExactQuoteInV3Instruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *BuyExactQuoteInV3Instruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling BuyExactQuoteInV3Instruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalBuyExactQuoteInV3Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalBuyExactQuoteInV3Instruction(buf []byte) (*BuyExactQuoteInV3Instruction, error) {
+	obj := new(BuyExactQuoteInV3Instruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type BuyExactSolInInstruction struct {
 	SpendableSolIn uint64     `json:"spendable_sol_in"`
 	MinTokensOut   uint64     `json:"min_tokens_out"`
 	TrackVolume    OptionBool `json:"track_volume"`
+	PartialFill    OptionBool `json:"partial_fill"`
 
 	// Accounts:
 	Global                         solanago.PublicKey `json:"global"`
@@ -4123,6 +6344,11 @@ func (obj *BuyExactSolInInstruction) UnmarshalWithDecoder(decoder *binary.Decode
 	}
 	// Deserialize `TrackVolume`:
 	err = decoder.Decode(&obj.TrackVolume)
+	if err != nil {
+		return err
+	}
+	// Deserialize `PartialFill`:
+	err = decoder.Decode(&obj.PartialFill)
 	if err != nil {
 		return err
 	}
@@ -4398,8 +6624,9 @@ func UnmarshalBuyExactSolInInstruction(buf []byte) (*BuyExactSolInInstruction, e
 }
 
 type BuyV2Instruction struct {
-	Amount     uint64 `json:"amount"`
-	MaxSolCost uint64 `json:"max_sol_cost"`
+	Amount      uint64     `json:"amount"`
+	MaxSolCost  uint64     `json:"max_sol_cost"`
+	PartialFill OptionBool `json:"partial_fill"`
 
 	// Accounts:
 	Global                                     solanago.PublicKey `json:"global"`
@@ -4468,6 +6695,11 @@ func (obj *BuyV2Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) error
 	}
 	// Deserialize `MaxSolCost`:
 	err = decoder.Decode(&obj.MaxSolCost)
+	if err != nil {
+		return err
+	}
+	// Deserialize `PartialFill`:
+	err = decoder.Decode(&obj.PartialFill)
 	if err != nil {
 		return err
 	}
@@ -4888,6 +7120,355 @@ func (obj *BuyV2Instruction) Unmarshal(buf []byte) error {
 // UnmarshalBuyV2Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
 func UnmarshalBuyV2Instruction(buf []byte) (*BuyV2Instruction, error) {
 	obj := new(BuyV2Instruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type BuyV3Instruction struct {
+	Amount      uint64     `json:"amount"`
+	MaxSolCost  uint64     `json:"max_sol_cost"`
+	PartialFill OptionBool `json:"partial_fill"`
+
+	// Accounts:
+	Global                              solanago.PublicKey `json:"global"`
+	BaseMint                            solanago.PublicKey `json:"base_mint"`
+	QuoteMint                           solanago.PublicKey `json:"quote_mint"`
+	BaseTokenProgram                    solanago.PublicKey `json:"base_token_program"`
+	QuoteTokenProgram                   solanago.PublicKey `json:"quote_token_program"`
+	BondingCurve                        solanago.PublicKey `json:"bonding_curve"`
+	BondingCurveWritable                bool               `json:"bonding_curve_writable"`
+	AssociatedBaseBondingCurve          solanago.PublicKey `json:"associated_base_bonding_curve"`
+	AssociatedBaseBondingCurveWritable  bool               `json:"associated_base_bonding_curve_writable"`
+	AssociatedQuoteBondingCurve         solanago.PublicKey `json:"associated_quote_bonding_curve"`
+	AssociatedQuoteBondingCurveWritable bool               `json:"associated_quote_bonding_curve_writable"`
+	User                                solanago.PublicKey `json:"user"`
+	UserWritable                        bool               `json:"user_writable"`
+	UserSigner                          bool               `json:"user_signer"`
+	AssociatedBaseUser                  solanago.PublicKey `json:"associated_base_user"`
+	AssociatedBaseUserWritable          bool               `json:"associated_base_user_writable"`
+	AssociatedQuoteUser                 solanago.PublicKey `json:"associated_quote_user"`
+	AssociatedQuoteUserWritable         bool               `json:"associated_quote_user_writable"`
+	UserVolumeAccumulator               solanago.PublicKey `json:"user_volume_accumulator"`
+	UserVolumeAccumulatorWritable       bool               `json:"user_volume_accumulator_writable"`
+	FeeConfig                           solanago.PublicKey `json:"fee_config"`
+	BuybackFeeRecipient                 solanago.PublicKey `json:"buyback_fee_recipient"`
+	BuybackFeeRecipientWritable         bool               `json:"buyback_fee_recipient_writable"`
+	SystemProgram                       solanago.PublicKey `json:"system_program"`
+	EventAuthority                      solanago.PublicKey `json:"event_authority"`
+	Program                             solanago.PublicKey `json:"program"`
+}
+
+func (obj *BuyV3Instruction) GetDiscriminator() []byte {
+	return Instruction_BuyV3[:]
+}
+
+// UnmarshalWithDecoder unmarshals the BuyV3Instruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *BuyV3Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "BuyV3Instruction", err)
+	}
+	if discriminator != Instruction_BuyV3 {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "BuyV3Instruction", Instruction_BuyV3, discriminator)
+	}
+	// Deserialize `Amount`:
+	err = decoder.Decode(&obj.Amount)
+	if err != nil {
+		return err
+	}
+	// Deserialize `MaxSolCost`:
+	err = decoder.Decode(&obj.MaxSolCost)
+	if err != nil {
+		return err
+	}
+	// Deserialize `PartialFill`:
+	err = decoder.Decode(&obj.PartialFill)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *BuyV3Instruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_base_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_base_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_base_user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_base_user", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_user", err)
+	}
+	indices = append(indices, index)
+	// Decode from user_volume_accumulator account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user_volume_accumulator", err)
+	}
+	indices = append(indices, index)
+	// Decode from fee_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "fee_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from buyback_fee_recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "buyback_fee_recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *BuyV3Instruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 17 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 17, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_mint", len(accountKeys)-1)
+	}
+	obj.BaseMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_token_program", len(accountKeys)-1)
+	}
+	obj.BaseTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
+	}
+	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_base_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_base_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedBaseBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user", len(accountKeys)-1)
+	}
+	obj.User = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_base_user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_base_user", len(accountKeys)-1)
+	}
+	obj.AssociatedBaseUser = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_user", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteUser = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user_volume_accumulator account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user_volume_accumulator", len(accountKeys)-1)
+	}
+	obj.UserVolumeAccumulator = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set fee_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "fee_config", len(accountKeys)-1)
+	}
+	obj.FeeConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set buyback_fee_recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "buyback_fee_recipient", len(accountKeys)-1)
+	}
+	obj.BuybackFeeRecipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *BuyV3Instruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.BaseMint)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.BaseTokenProgram)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.AssociatedBaseBondingCurve)
+	keys = append(keys, obj.AssociatedQuoteBondingCurve)
+	keys = append(keys, obj.User)
+	keys = append(keys, obj.AssociatedBaseUser)
+	keys = append(keys, obj.AssociatedQuoteUser)
+	keys = append(keys, obj.UserVolumeAccumulator)
+	keys = append(keys, obj.FeeConfig)
+	keys = append(keys, obj.BuybackFeeRecipient)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the BuyV3Instruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *BuyV3Instruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling BuyV3Instruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalBuyV3Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalBuyV3Instruction(buf []byte) (*BuyV3Instruction, error) {
+	obj := new(BuyV3Instruction)
 	var err error
 	err = obj.Unmarshal(buf)
 	if err != nil {
@@ -5782,6 +8363,226 @@ func UnmarshalCollectCreatorFeeInstruction(buf []byte) (*CollectCreatorFeeInstru
 	return obj, nil
 }
 
+type CollectCreatorFeeV2Instruction struct {
+
+	// Accounts:
+	Creator                          solanago.PublicKey `json:"creator"`
+	CreatorWritable                  bool               `json:"creator_writable"`
+	CreatorTokenAccount              solanago.PublicKey `json:"creator_token_account"`
+	CreatorTokenAccountWritable      bool               `json:"creator_token_account_writable"`
+	CreatorVault                     solanago.PublicKey `json:"creator_vault"`
+	CreatorVaultWritable             bool               `json:"creator_vault_writable"`
+	CreatorVaultTokenAccount         solanago.PublicKey `json:"creator_vault_token_account"`
+	CreatorVaultTokenAccountWritable bool               `json:"creator_vault_token_account_writable"`
+	QuoteMint                        solanago.PublicKey `json:"quote_mint"`
+	QuoteTokenProgram                solanago.PublicKey `json:"quote_token_program"`
+	AssociatedTokenProgram           solanago.PublicKey `json:"associated_token_program"`
+	SystemProgram                    solanago.PublicKey `json:"system_program"`
+	EventAuthority                   solanago.PublicKey `json:"event_authority"`
+	Program                          solanago.PublicKey `json:"program"`
+}
+
+func (obj *CollectCreatorFeeV2Instruction) GetDiscriminator() []byte {
+	return Instruction_CollectCreatorFeeV2[:]
+}
+
+// UnmarshalWithDecoder unmarshals the CollectCreatorFeeV2Instruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *CollectCreatorFeeV2Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "CollectCreatorFeeV2Instruction", err)
+	}
+	if discriminator != Instruction_CollectCreatorFeeV2 {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "CollectCreatorFeeV2Instruction", Instruction_CollectCreatorFeeV2, discriminator)
+	}
+	return nil
+}
+
+func (obj *CollectCreatorFeeV2Instruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from creator account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_vault account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_vault", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_vault_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_vault_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *CollectCreatorFeeV2Instruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 10 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 10, len(indices))
+	}
+	indexOffset := 0
+	// Set creator account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator", len(accountKeys)-1)
+	}
+	obj.Creator = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_token_account", len(accountKeys)-1)
+	}
+	obj.CreatorTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_vault account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_vault", len(accountKeys)-1)
+	}
+	obj.CreatorVault = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_vault_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_vault_token_account", len(accountKeys)-1)
+	}
+	obj.CreatorVaultTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_token_program", len(accountKeys)-1)
+	}
+	obj.AssociatedTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *CollectCreatorFeeV2Instruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Creator)
+	keys = append(keys, obj.CreatorTokenAccount)
+	keys = append(keys, obj.CreatorVault)
+	keys = append(keys, obj.CreatorVaultTokenAccount)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.AssociatedTokenProgram)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the CollectCreatorFeeV2Instruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *CollectCreatorFeeV2Instruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling CollectCreatorFeeV2Instruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalCollectCreatorFeeV2Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalCollectCreatorFeeV2Instruction(buf []byte) (*CollectCreatorFeeV2Instruction, error) {
+	obj := new(CollectCreatorFeeV2Instruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type CreateInstruction struct {
 	Name    string             `json:"name"`
 	Symbol  string             `json:"symbol"`
@@ -6097,6 +8898,8 @@ type CreateV2Instruction struct {
 	Creator           solanago.PublicKey `json:"creator"`
 	IsMayhemMode      bool               `json:"is_mayhem_mode"`
 	IsCashbackEnabled OptionBool         `json:"is_cashback_enabled"`
+	CreatorFeeBps     OptionU64          `json:"creator_fee_bps"`
+	IsHolderReward    OptionBool         `json:"is_holder_reward"`
 
 	// Accounts:
 	Mint                           solanago.PublicKey `json:"mint"`
@@ -6169,6 +8972,16 @@ func (obj *CreateV2Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) er
 	}
 	// Deserialize `IsCashbackEnabled`:
 	err = decoder.Decode(&obj.IsCashbackEnabled)
+	if err != nil {
+		return err
+	}
+	// Deserialize `CreatorFeeBps`:
+	err = decoder.Decode(&obj.CreatorFeeBps)
+	if err != nil {
+		return err
+	}
+	// Deserialize `IsHolderReward`:
+	err = decoder.Decode(&obj.IsHolderReward)
 	if err != nil {
 		return err
 	}
@@ -6615,12 +9428,513 @@ func UnmarshalDistributeCreatorFeesInstruction(buf []byte) (*DistributeCreatorFe
 	return obj, nil
 }
 
+type DistributeCreatorFeesV2Instruction struct {
+	InitializeAta bool `json:"initialize_ata"`
+
+	// Accounts:
+	Payer                                 solanago.PublicKey `json:"payer"`
+	PayerWritable                         bool               `json:"payer_writable"`
+	PayerSigner                           bool               `json:"payer_signer"`
+	Mint                                  solanago.PublicKey `json:"mint"`
+	BondingCurve                          solanago.PublicKey `json:"bonding_curve"`
+	SharingConfig                         solanago.PublicKey `json:"sharing_config"`
+	CreatorVault                          solanago.PublicKey `json:"creator_vault"`
+	CreatorVaultWritable                  bool               `json:"creator_vault_writable"`
+	SystemProgram                         solanago.PublicKey `json:"system_program"`
+	EventAuthority                        solanago.PublicKey `json:"event_authority"`
+	Program                               solanago.PublicKey `json:"program"`
+	CreatorVaultQuoteTokenAccount         solanago.PublicKey `json:"creator_vault_quote_token_account"`
+	CreatorVaultQuoteTokenAccountWritable bool               `json:"creator_vault_quote_token_account_writable"`
+	QuoteMint                             solanago.PublicKey `json:"quote_mint"`
+	QuoteTokenProgram                     solanago.PublicKey `json:"quote_token_program"`
+	AssociatedTokenProgram                solanago.PublicKey `json:"associated_token_program"`
+}
+
+func (obj *DistributeCreatorFeesV2Instruction) GetDiscriminator() []byte {
+	return Instruction_DistributeCreatorFeesV2[:]
+}
+
+// UnmarshalWithDecoder unmarshals the DistributeCreatorFeesV2Instruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *DistributeCreatorFeesV2Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "DistributeCreatorFeesV2Instruction", err)
+	}
+	if discriminator != Instruction_DistributeCreatorFeesV2 {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "DistributeCreatorFeesV2Instruction", Instruction_DistributeCreatorFeesV2, discriminator)
+	}
+	// Deserialize `InitializeAta`:
+	err = decoder.Decode(&obj.InitializeAta)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *DistributeCreatorFeesV2Instruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from payer account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "payer", err)
+	}
+	indices = append(indices, index)
+	// Decode from mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from sharing_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "sharing_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_vault account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_vault", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	// Decode from creator_vault_quote_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "creator_vault_quote_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_token_program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *DistributeCreatorFeesV2Instruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 12 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 12, len(indices))
+	}
+	indexOffset := 0
+	// Set payer account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "payer", len(accountKeys)-1)
+	}
+	obj.Payer = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "mint", len(accountKeys)-1)
+	}
+	obj.Mint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
+	}
+	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set sharing_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "sharing_config", len(accountKeys)-1)
+	}
+	obj.SharingConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_vault account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_vault", len(accountKeys)-1)
+	}
+	obj.CreatorVault = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set creator_vault_quote_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "creator_vault_quote_token_account", len(accountKeys)-1)
+	}
+	obj.CreatorVaultQuoteTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_token_program", len(accountKeys)-1)
+	}
+	obj.AssociatedTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *DistributeCreatorFeesV2Instruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Payer)
+	keys = append(keys, obj.Mint)
+	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.SharingConfig)
+	keys = append(keys, obj.CreatorVault)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	keys = append(keys, obj.CreatorVaultQuoteTokenAccount)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.AssociatedTokenProgram)
+	return keys
+}
+
+// Unmarshal unmarshals the DistributeCreatorFeesV2Instruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *DistributeCreatorFeesV2Instruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling DistributeCreatorFeesV2Instruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalDistributeCreatorFeesV2Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalDistributeCreatorFeesV2Instruction(buf []byte) (*DistributeCreatorFeesV2Instruction, error) {
+	obj := new(DistributeCreatorFeesV2Instruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type DistributeFeeToHoldersInstruction struct {
+	Amounts []uint64 `json:"amounts"`
+
+	// Accounts:
+	Global                             solanago.PublicKey `json:"global"`
+	HolderRewardClaimAuthority         solanago.PublicKey `json:"holder_reward_claim_authority"`
+	HolderRewardClaimAuthorityWritable bool               `json:"holder_reward_claim_authority_writable"`
+	HolderRewardClaimAuthoritySigner   bool               `json:"holder_reward_claim_authority_signer"`
+	Mint                               solanago.PublicKey `json:"mint"`
+	HolderRewards                      solanago.PublicKey `json:"holder_rewards"`
+	HolderRewardsWritable              bool               `json:"holder_rewards_writable"`
+	HolderRewardsTokenAccount          solanago.PublicKey `json:"holder_rewards_token_account"`
+	HolderRewardsTokenAccountWritable  bool               `json:"holder_rewards_token_account_writable"`
+	HolderRewardsTokenAccountOptional  bool               `json:"holder_rewards_token_account_optional"`
+	QuoteMint                          solanago.PublicKey `json:"quote_mint"`
+	QuoteTokenProgram                  solanago.PublicKey `json:"quote_token_program"`
+	AssociatedTokenProgram             solanago.PublicKey `json:"associated_token_program"`
+	SystemProgram                      solanago.PublicKey `json:"system_program"`
+	EventAuthority                     solanago.PublicKey `json:"event_authority"`
+	Program                            solanago.PublicKey `json:"program"`
+}
+
+func (obj *DistributeFeeToHoldersInstruction) GetDiscriminator() []byte {
+	return Instruction_DistributeFeeToHolders[:]
+}
+
+// UnmarshalWithDecoder unmarshals the DistributeFeeToHoldersInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *DistributeFeeToHoldersInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "DistributeFeeToHoldersInstruction", err)
+	}
+	if discriminator != Instruction_DistributeFeeToHolders {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "DistributeFeeToHoldersInstruction", Instruction_DistributeFeeToHolders, discriminator)
+	}
+	// Deserialize `Amounts`:
+	err = decoder.Decode(&obj.Amounts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *DistributeFeeToHoldersInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from holder_reward_claim_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "holder_reward_claim_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from holder_rewards account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "holder_rewards", err)
+	}
+	indices = append(indices, index)
+	// Decode from holder_rewards_token_account account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "holder_rewards_token_account", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *DistributeFeeToHoldersInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 11 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 11, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set holder_reward_claim_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "holder_reward_claim_authority", len(accountKeys)-1)
+	}
+	obj.HolderRewardClaimAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "mint", len(accountKeys)-1)
+	}
+	obj.Mint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set holder_rewards account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "holder_rewards", len(accountKeys)-1)
+	}
+	obj.HolderRewards = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set holder_rewards_token_account account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "holder_rewards_token_account", len(accountKeys)-1)
+	}
+	obj.HolderRewardsTokenAccount = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_token_program", len(accountKeys)-1)
+	}
+	obj.AssociatedTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *DistributeFeeToHoldersInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.HolderRewardClaimAuthority)
+	keys = append(keys, obj.Mint)
+	keys = append(keys, obj.HolderRewards)
+	keys = append(keys, obj.HolderRewardsTokenAccount)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.AssociatedTokenProgram)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the DistributeFeeToHoldersInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *DistributeFeeToHoldersInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling DistributeFeeToHoldersInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalDistributeFeeToHoldersInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalDistributeFeeToHoldersInstruction(buf []byte) (*DistributeFeeToHoldersInstruction, error) {
+	obj := new(DistributeFeeToHoldersInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type ExtendAccountInstruction struct {
 
 	// Accounts:
 	Account         solanago.PublicKey `json:"account"`
 	AccountWritable bool               `json:"account_writable"`
 	User            solanago.PublicKey `json:"user"`
+	UserWritable    bool               `json:"user_writable"`
 	UserSigner      bool               `json:"user_signer"`
 	SystemProgram   solanago.PublicKey `json:"system_program"`
 	EventAuthority  solanago.PublicKey `json:"event_authority"`
@@ -7157,6 +10471,120 @@ func UnmarshalInitializeInstruction(buf []byte) (*InitializeInstruction, error) 
 	return obj, nil
 }
 
+type InitializeQuoteControlInstruction struct {
+
+	// Accounts:
+	QuoteControl         solanago.PublicKey `json:"quote_control"`
+	QuoteControlWritable bool               `json:"quote_control_writable"`
+	User                 solanago.PublicKey `json:"user"`
+	UserWritable         bool               `json:"user_writable"`
+	UserSigner           bool               `json:"user_signer"`
+	SystemProgram        solanago.PublicKey `json:"system_program"`
+}
+
+func (obj *InitializeQuoteControlInstruction) GetDiscriminator() []byte {
+	return Instruction_InitializeQuoteControl[:]
+}
+
+// UnmarshalWithDecoder unmarshals the InitializeQuoteControlInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *InitializeQuoteControlInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "InitializeQuoteControlInstruction", err)
+	}
+	if discriminator != Instruction_InitializeQuoteControl {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "InitializeQuoteControlInstruction", Instruction_InitializeQuoteControl, discriminator)
+	}
+	return nil
+}
+
+func (obj *InitializeQuoteControlInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from quote_control account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_control", err)
+	}
+	indices = append(indices, index)
+	// Decode from user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *InitializeQuoteControlInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 3 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 3, len(indices))
+	}
+	indexOffset := 0
+	// Set quote_control account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_control", len(accountKeys)-1)
+	}
+	obj.QuoteControl = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user", len(accountKeys)-1)
+	}
+	obj.User = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *InitializeQuoteControlInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.QuoteControl)
+	keys = append(keys, obj.User)
+	keys = append(keys, obj.SystemProgram)
+	return keys
+}
+
+// Unmarshal unmarshals the InitializeQuoteControlInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *InitializeQuoteControlInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling InitializeQuoteControlInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalInitializeQuoteControlInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalInitializeQuoteControlInstruction(buf []byte) (*InitializeQuoteControlInstruction, error) {
+	obj := new(InitializeQuoteControlInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type MigrateInstruction struct {
 
 	// Accounts:
@@ -7169,6 +10597,7 @@ type MigrateInstruction struct {
 	AssociatedBondingCurve           solanago.PublicKey `json:"associated_bonding_curve"`
 	AssociatedBondingCurveWritable   bool               `json:"associated_bonding_curve_writable"`
 	User                             solanago.PublicKey `json:"user"`
+	UserWritable                     bool               `json:"user_writable"`
 	UserSigner                       bool               `json:"user_signer"`
 	SystemProgram                    solanago.PublicKey `json:"system_program"`
 	TokenProgram                     solanago.PublicKey `json:"token_program"`
@@ -7767,6 +11196,7 @@ type MigrateV2Instruction struct {
 	AssociatedQuoteBondingCurve         solanago.PublicKey `json:"associated_quote_bonding_curve"`
 	AssociatedQuoteBondingCurveWritable bool               `json:"associated_quote_bonding_curve_writable"`
 	User                                solanago.PublicKey `json:"user"`
+	UserWritable                        bool               `json:"user_writable"`
 	UserSigner                          bool               `json:"user_signer"`
 	SystemProgram                       solanago.PublicKey `json:"system_program"`
 	PumpAmm                             solanago.PublicKey `json:"pump_amm"`
@@ -8228,6 +11658,453 @@ func (obj *MigrateV2Instruction) Unmarshal(buf []byte) error {
 // UnmarshalMigrateV2Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
 func UnmarshalMigrateV2Instruction(buf []byte) (*MigrateV2Instruction, error) {
 	obj := new(MigrateV2Instruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type MultiHopCurveSwapInstruction struct {
+	AmountIn uint64 `json:"amount_in"`
+	HopFees  []byte `json:"hop_fees"`
+
+	// Accounts:
+	Global                      solanago.PublicKey `json:"global"`
+	FeeConfig                   solanago.PublicKey `json:"fee_config"`
+	PumpAmmGlobalConfig         solanago.PublicKey `json:"pump_amm_global_config"`
+	PumpAmmGlobalConfigSigner   bool               `json:"pump_amm_global_config_signer"`
+	User                        solanago.PublicKey `json:"user"`
+	UserWritable                bool               `json:"user_writable"`
+	UserSigner                  bool               `json:"user_signer"`
+	SourceAuthority             solanago.PublicKey `json:"source_authority"`
+	SourceAuthoritySigner       bool               `json:"source_authority_signer"`
+	Source                      solanago.PublicKey `json:"source"`
+	SourceWritable              bool               `json:"source_writable"`
+	Destination                 solanago.PublicKey `json:"destination"`
+	DestinationWritable         bool               `json:"destination_writable"`
+	BuybackFeeRecipient         solanago.PublicKey `json:"buyback_fee_recipient"`
+	BuybackFeeRecipientWritable bool               `json:"buyback_fee_recipient_writable"`
+	TokenProgram                solanago.PublicKey `json:"token_program"`
+	Token2022Program            solanago.PublicKey `json:"token_2022_program"`
+	SystemProgram               solanago.PublicKey `json:"system_program"`
+	EventAuthority              solanago.PublicKey `json:"event_authority"`
+	Program                     solanago.PublicKey `json:"program"`
+}
+
+func (obj *MultiHopCurveSwapInstruction) GetDiscriminator() []byte {
+	return Instruction_MultiHopCurveSwap[:]
+}
+
+// UnmarshalWithDecoder unmarshals the MultiHopCurveSwapInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *MultiHopCurveSwapInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "MultiHopCurveSwapInstruction", err)
+	}
+	if discriminator != Instruction_MultiHopCurveSwap {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "MultiHopCurveSwapInstruction", Instruction_MultiHopCurveSwap, discriminator)
+	}
+	// Deserialize `AmountIn`:
+	err = decoder.Decode(&obj.AmountIn)
+	if err != nil {
+		return err
+	}
+	// Deserialize `HopFees`:
+	err = decoder.Decode(&obj.HopFees)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *MultiHopCurveSwapInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from fee_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "fee_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from pump_amm_global_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "pump_amm_global_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user", err)
+	}
+	indices = append(indices, index)
+	// Decode from source_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "source_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from source account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "source", err)
+	}
+	indices = append(indices, index)
+	// Decode from destination account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "destination", err)
+	}
+	indices = append(indices, index)
+	// Decode from buyback_fee_recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "buyback_fee_recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from token_2022_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "token_2022_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *MultiHopCurveSwapInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 13 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 13, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set fee_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "fee_config", len(accountKeys)-1)
+	}
+	obj.FeeConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set pump_amm_global_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "pump_amm_global_config", len(accountKeys)-1)
+	}
+	obj.PumpAmmGlobalConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user", len(accountKeys)-1)
+	}
+	obj.User = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set source_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "source_authority", len(accountKeys)-1)
+	}
+	obj.SourceAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set source account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "source", len(accountKeys)-1)
+	}
+	obj.Source = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set destination account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "destination", len(accountKeys)-1)
+	}
+	obj.Destination = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set buyback_fee_recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "buyback_fee_recipient", len(accountKeys)-1)
+	}
+	obj.BuybackFeeRecipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "token_program", len(accountKeys)-1)
+	}
+	obj.TokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set token_2022_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "token_2022_program", len(accountKeys)-1)
+	}
+	obj.Token2022Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *MultiHopCurveSwapInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.FeeConfig)
+	keys = append(keys, obj.PumpAmmGlobalConfig)
+	keys = append(keys, obj.User)
+	keys = append(keys, obj.SourceAuthority)
+	keys = append(keys, obj.Source)
+	keys = append(keys, obj.Destination)
+	keys = append(keys, obj.BuybackFeeRecipient)
+	keys = append(keys, obj.TokenProgram)
+	keys = append(keys, obj.Token2022Program)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the MultiHopCurveSwapInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *MultiHopCurveSwapInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling MultiHopCurveSwapInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalMultiHopCurveSwapInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalMultiHopCurveSwapInstruction(buf []byte) (*MultiHopCurveSwapInstruction, error) {
+	obj := new(MultiHopCurveSwapInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type RemoveQuoteControlMintInstruction struct {
+	QuoteMint solanago.PublicKey `json:"quote_mint"`
+
+	// Accounts:
+	Authority            solanago.PublicKey `json:"authority"`
+	AuthorityWritable    bool               `json:"authority_writable"`
+	AuthoritySigner      bool               `json:"authority_signer"`
+	Global               solanago.PublicKey `json:"global"`
+	QuoteControl         solanago.PublicKey `json:"quote_control"`
+	QuoteControlWritable bool               `json:"quote_control_writable"`
+	SystemProgram        solanago.PublicKey `json:"system_program"`
+	EventAuthority       solanago.PublicKey `json:"event_authority"`
+	Program              solanago.PublicKey `json:"program"`
+}
+
+func (obj *RemoveQuoteControlMintInstruction) GetDiscriminator() []byte {
+	return Instruction_RemoveQuoteControlMint[:]
+}
+
+// UnmarshalWithDecoder unmarshals the RemoveQuoteControlMintInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *RemoveQuoteControlMintInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "RemoveQuoteControlMintInstruction", err)
+	}
+	if discriminator != Instruction_RemoveQuoteControlMint {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "RemoveQuoteControlMintInstruction", Instruction_RemoveQuoteControlMint, discriminator)
+	}
+	// Deserialize `QuoteMint`:
+	err = decoder.Decode(&obj.QuoteMint)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *RemoveQuoteControlMintInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_control account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_control", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *RemoveQuoteControlMintInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 6 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 6, len(indices))
+	}
+	indexOffset := 0
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_control account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_control", len(accountKeys)-1)
+	}
+	obj.QuoteControl = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *RemoveQuoteControlMintInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.QuoteControl)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the RemoveQuoteControlMintInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *RemoveQuoteControlMintInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling RemoveQuoteControlMintInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalRemoveQuoteControlMintInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalRemoveQuoteControlMintInstruction(buf []byte) (*RemoveQuoteControlMintInstruction, error) {
+	obj := new(RemoveQuoteControlMintInstruction)
 	var err error
 	err = obj.Unmarshal(buf)
 	if err != nil {
@@ -9152,6 +13029,349 @@ func UnmarshalSellV2Instruction(buf []byte) (*SellV2Instruction, error) {
 	return obj, nil
 }
 
+type SellV3Instruction struct {
+	Amount       uint64 `json:"amount"`
+	MinSolOutput uint64 `json:"min_sol_output"`
+
+	// Accounts:
+	Global                              solanago.PublicKey `json:"global"`
+	BaseMint                            solanago.PublicKey `json:"base_mint"`
+	QuoteMint                           solanago.PublicKey `json:"quote_mint"`
+	BaseTokenProgram                    solanago.PublicKey `json:"base_token_program"`
+	QuoteTokenProgram                   solanago.PublicKey `json:"quote_token_program"`
+	BondingCurve                        solanago.PublicKey `json:"bonding_curve"`
+	BondingCurveWritable                bool               `json:"bonding_curve_writable"`
+	AssociatedBaseBondingCurve          solanago.PublicKey `json:"associated_base_bonding_curve"`
+	AssociatedBaseBondingCurveWritable  bool               `json:"associated_base_bonding_curve_writable"`
+	AssociatedQuoteBondingCurve         solanago.PublicKey `json:"associated_quote_bonding_curve"`
+	AssociatedQuoteBondingCurveWritable bool               `json:"associated_quote_bonding_curve_writable"`
+	User                                solanago.PublicKey `json:"user"`
+	UserWritable                        bool               `json:"user_writable"`
+	UserSigner                          bool               `json:"user_signer"`
+	AssociatedBaseUser                  solanago.PublicKey `json:"associated_base_user"`
+	AssociatedBaseUserWritable          bool               `json:"associated_base_user_writable"`
+	AssociatedQuoteUser                 solanago.PublicKey `json:"associated_quote_user"`
+	AssociatedQuoteUserWritable         bool               `json:"associated_quote_user_writable"`
+	UserVolumeAccumulator               solanago.PublicKey `json:"user_volume_accumulator"`
+	UserVolumeAccumulatorWritable       bool               `json:"user_volume_accumulator_writable"`
+	FeeConfig                           solanago.PublicKey `json:"fee_config"`
+	BuybackFeeRecipient                 solanago.PublicKey `json:"buyback_fee_recipient"`
+	BuybackFeeRecipientWritable         bool               `json:"buyback_fee_recipient_writable"`
+	SystemProgram                       solanago.PublicKey `json:"system_program"`
+	EventAuthority                      solanago.PublicKey `json:"event_authority"`
+	Program                             solanago.PublicKey `json:"program"`
+}
+
+func (obj *SellV3Instruction) GetDiscriminator() []byte {
+	return Instruction_SellV3[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SellV3Instruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SellV3Instruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SellV3Instruction", err)
+	}
+	if discriminator != Instruction_SellV3 {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SellV3Instruction", Instruction_SellV3, discriminator)
+	}
+	// Deserialize `Amount`:
+	err = decoder.Decode(&obj.Amount)
+	if err != nil {
+		return err
+	}
+	// Deserialize `MinSolOutput`:
+	err = decoder.Decode(&obj.MinSolOutput)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *SellV3Instruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_base_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_base_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_base_user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_base_user", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_user account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_user", err)
+	}
+	indices = append(indices, index)
+	// Decode from user_volume_accumulator account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "user_volume_accumulator", err)
+	}
+	indices = append(indices, index)
+	// Decode from fee_config account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "fee_config", err)
+	}
+	indices = append(indices, index)
+	// Decode from buyback_fee_recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "buyback_fee_recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SellV3Instruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 17 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 17, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_mint", len(accountKeys)-1)
+	}
+	obj.BaseMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_token_program", len(accountKeys)-1)
+	}
+	obj.BaseTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
+	}
+	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_base_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_base_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedBaseBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user", len(accountKeys)-1)
+	}
+	obj.User = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_base_user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_base_user", len(accountKeys)-1)
+	}
+	obj.AssociatedBaseUser = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_user account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_user", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteUser = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set user_volume_accumulator account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "user_volume_accumulator", len(accountKeys)-1)
+	}
+	obj.UserVolumeAccumulator = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set fee_config account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "fee_config", len(accountKeys)-1)
+	}
+	obj.FeeConfig = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set buyback_fee_recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "buyback_fee_recipient", len(accountKeys)-1)
+	}
+	obj.BuybackFeeRecipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SellV3Instruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.BaseMint)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.BaseTokenProgram)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.AssociatedBaseBondingCurve)
+	keys = append(keys, obj.AssociatedQuoteBondingCurve)
+	keys = append(keys, obj.User)
+	keys = append(keys, obj.AssociatedBaseUser)
+	keys = append(keys, obj.AssociatedQuoteUser)
+	keys = append(keys, obj.UserVolumeAccumulator)
+	keys = append(keys, obj.FeeConfig)
+	keys = append(keys, obj.BuybackFeeRecipient)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SellV3Instruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SellV3Instruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SellV3Instruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSellV3Instruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSellV3Instruction(buf []byte) (*SellV3Instruction, error) {
+	obj := new(SellV3Instruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type SetCreatorInstruction struct {
 	Creator solanago.PublicKey `json:"creator"`
 
@@ -9324,6 +13544,142 @@ func (obj *SetCreatorInstruction) Unmarshal(buf []byte) error {
 // UnmarshalSetCreatorInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
 func UnmarshalSetCreatorInstruction(buf []byte) (*SetCreatorInstruction, error) {
 	obj := new(SetCreatorInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type SetMaxCurveDepthInstruction struct {
+	MaxCurveDepth uint8 `json:"max_curve_depth"`
+
+	// Accounts:
+	Global            solanago.PublicKey `json:"global"`
+	GlobalWritable    bool               `json:"global_writable"`
+	Authority         solanago.PublicKey `json:"authority"`
+	AuthorityWritable bool               `json:"authority_writable"`
+	AuthoritySigner   bool               `json:"authority_signer"`
+	EventAuthority    solanago.PublicKey `json:"event_authority"`
+	Program           solanago.PublicKey `json:"program"`
+}
+
+func (obj *SetMaxCurveDepthInstruction) GetDiscriminator() []byte {
+	return Instruction_SetMaxCurveDepth[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SetMaxCurveDepthInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SetMaxCurveDepthInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SetMaxCurveDepthInstruction", err)
+	}
+	if discriminator != Instruction_SetMaxCurveDepth {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SetMaxCurveDepthInstruction", Instruction_SetMaxCurveDepth, discriminator)
+	}
+	// Deserialize `MaxCurveDepth`:
+	err = decoder.Decode(&obj.MaxCurveDepth)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *SetMaxCurveDepthInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SetMaxCurveDepthInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 4 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 4, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SetMaxCurveDepthInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SetMaxCurveDepthInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SetMaxCurveDepthInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SetMaxCurveDepthInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSetMaxCurveDepthInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSetMaxCurveDepthInstruction(buf []byte) (*SetMaxCurveDepthInstruction, error) {
+	obj := new(SetMaxCurveDepthInstruction)
 	var err error
 	err = obj.Unmarshal(buf)
 	if err != nil {
@@ -9860,6 +14216,462 @@ func UnmarshalSetParamsInstruction(buf []byte) (*SetParamsInstruction, error) {
 	return obj, nil
 }
 
+type SetQuoteControlAdminInstruction struct {
+	NewAdmin solanago.PublicKey `json:"new_admin"`
+
+	// Accounts:
+	Global               solanago.PublicKey `json:"global"`
+	Authority            solanago.PublicKey `json:"authority"`
+	AuthoritySigner      bool               `json:"authority_signer"`
+	QuoteControl         solanago.PublicKey `json:"quote_control"`
+	QuoteControlWritable bool               `json:"quote_control_writable"`
+	EventAuthority       solanago.PublicKey `json:"event_authority"`
+	Program              solanago.PublicKey `json:"program"`
+}
+
+func (obj *SetQuoteControlAdminInstruction) GetDiscriminator() []byte {
+	return Instruction_SetQuoteControlAdmin[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SetQuoteControlAdminInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SetQuoteControlAdminInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SetQuoteControlAdminInstruction", err)
+	}
+	if discriminator != Instruction_SetQuoteControlAdmin {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SetQuoteControlAdminInstruction", Instruction_SetQuoteControlAdmin, discriminator)
+	}
+	// Deserialize `NewAdmin`:
+	err = decoder.Decode(&obj.NewAdmin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *SetQuoteControlAdminInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_control account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_control", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SetQuoteControlAdminInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 5 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 5, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_control account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_control", len(accountKeys)-1)
+	}
+	obj.QuoteControl = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SetQuoteControlAdminInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.QuoteControl)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SetQuoteControlAdminInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SetQuoteControlAdminInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SetQuoteControlAdminInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSetQuoteControlAdminInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSetQuoteControlAdminInstruction(buf []byte) (*SetQuoteControlAdminInstruction, error) {
+	obj := new(SetQuoteControlAdminInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type SetQuoteControlMintReservesInstruction struct {
+	QuoteMint                   solanago.PublicKey `json:"quote_mint"`
+	InitialVirtualQuoteReserves uint64             `json:"initial_virtual_quote_reserves"`
+
+	// Accounts:
+	Authority            solanago.PublicKey `json:"authority"`
+	AuthoritySigner      bool               `json:"authority_signer"`
+	Global               solanago.PublicKey `json:"global"`
+	QuoteControl         solanago.PublicKey `json:"quote_control"`
+	QuoteControlWritable bool               `json:"quote_control_writable"`
+	EventAuthority       solanago.PublicKey `json:"event_authority"`
+	Program              solanago.PublicKey `json:"program"`
+}
+
+func (obj *SetQuoteControlMintReservesInstruction) GetDiscriminator() []byte {
+	return Instruction_SetQuoteControlMintReserves[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SetQuoteControlMintReservesInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SetQuoteControlMintReservesInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SetQuoteControlMintReservesInstruction", err)
+	}
+	if discriminator != Instruction_SetQuoteControlMintReserves {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SetQuoteControlMintReservesInstruction", Instruction_SetQuoteControlMintReserves, discriminator)
+	}
+	// Deserialize `QuoteMint`:
+	err = decoder.Decode(&obj.QuoteMint)
+	if err != nil {
+		return err
+	}
+	// Deserialize `InitialVirtualQuoteReserves`:
+	err = decoder.Decode(&obj.InitialVirtualQuoteReserves)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *SetQuoteControlMintReservesInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_control account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_control", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SetQuoteControlMintReservesInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 5 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 5, len(indices))
+	}
+	indexOffset := 0
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_control account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_control", len(accountKeys)-1)
+	}
+	obj.QuoteControl = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SetQuoteControlMintReservesInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.QuoteControl)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SetQuoteControlMintReservesInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SetQuoteControlMintReservesInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SetQuoteControlMintReservesInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSetQuoteControlMintReservesInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSetQuoteControlMintReservesInstruction(buf []byte) (*SetQuoteControlMintReservesInstruction, error) {
+	obj := new(SetQuoteControlMintReservesInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type SetQuoteControlReservesAdminInstruction struct {
+	NewReservesAdmin solanago.PublicKey `json:"new_reserves_admin"`
+
+	// Accounts:
+	Authority            solanago.PublicKey `json:"authority"`
+	AuthoritySigner      bool               `json:"authority_signer"`
+	Global               solanago.PublicKey `json:"global"`
+	QuoteControl         solanago.PublicKey `json:"quote_control"`
+	QuoteControlWritable bool               `json:"quote_control_writable"`
+	EventAuthority       solanago.PublicKey `json:"event_authority"`
+	Program              solanago.PublicKey `json:"program"`
+}
+
+func (obj *SetQuoteControlReservesAdminInstruction) GetDiscriminator() []byte {
+	return Instruction_SetQuoteControlReservesAdmin[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SetQuoteControlReservesAdminInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SetQuoteControlReservesAdminInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SetQuoteControlReservesAdminInstruction", err)
+	}
+	if discriminator != Instruction_SetQuoteControlReservesAdmin {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SetQuoteControlReservesAdminInstruction", Instruction_SetQuoteControlReservesAdmin, discriminator)
+	}
+	// Deserialize `NewReservesAdmin`:
+	err = decoder.Decode(&obj.NewReservesAdmin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *SetQuoteControlReservesAdminInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_control account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_control", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SetQuoteControlReservesAdminInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 5 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 5, len(indices))
+	}
+	indexOffset := 0
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_control account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_control", len(accountKeys)-1)
+	}
+	obj.QuoteControl = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SetQuoteControlReservesAdminInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.QuoteControl)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SetQuoteControlReservesAdminInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SetQuoteControlReservesAdminInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SetQuoteControlReservesAdminInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSetQuoteControlReservesAdminInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSetQuoteControlReservesAdminInstruction(buf []byte) (*SetQuoteControlReservesAdminInstruction, error) {
+	obj := new(SetQuoteControlReservesAdminInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type SetReservedFeeRecipientsInstruction struct {
 	WhitelistPda solanago.PublicKey `json:"whitelist_pda"`
 
@@ -10123,6 +14935,540 @@ func (obj *SetVirtualQuoteReservesInstruction) Unmarshal(buf []byte) error {
 // UnmarshalSetVirtualQuoteReservesInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
 func UnmarshalSetVirtualQuoteReservesInstruction(buf []byte) (*SetVirtualQuoteReservesInstruction, error) {
 	obj := new(SetVirtualQuoteReservesInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type SweepCreatorFeeInstruction struct {
+
+	// Accounts:
+	Payer                               solanago.PublicKey `json:"payer"`
+	PayerWritable                       bool               `json:"payer_writable"`
+	PayerSigner                         bool               `json:"payer_signer"`
+	Global                              solanago.PublicKey `json:"global"`
+	BaseMint                            solanago.PublicKey `json:"base_mint"`
+	QuoteMint                           solanago.PublicKey `json:"quote_mint"`
+	QuoteTokenProgram                   solanago.PublicKey `json:"quote_token_program"`
+	AssociatedTokenProgram              solanago.PublicKey `json:"associated_token_program"`
+	SystemProgram                       solanago.PublicKey `json:"system_program"`
+	BondingCurve                        solanago.PublicKey `json:"bonding_curve"`
+	BondingCurveWritable                bool               `json:"bonding_curve_writable"`
+	AssociatedQuoteBondingCurve         solanago.PublicKey `json:"associated_quote_bonding_curve"`
+	AssociatedQuoteBondingCurveWritable bool               `json:"associated_quote_bonding_curve_writable"`
+	Recipient                           solanago.PublicKey `json:"recipient"`
+	RecipientWritable                   bool               `json:"recipient_writable"`
+	AssociatedQuoteRecipient            solanago.PublicKey `json:"associated_quote_recipient"`
+	AssociatedQuoteRecipientWritable    bool               `json:"associated_quote_recipient_writable"`
+	EventAuthority                      solanago.PublicKey `json:"event_authority"`
+	Program                             solanago.PublicKey `json:"program"`
+}
+
+func (obj *SweepCreatorFeeInstruction) GetDiscriminator() []byte {
+	return Instruction_SweepCreatorFee[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SweepCreatorFeeInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SweepCreatorFeeInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SweepCreatorFeeInstruction", err)
+	}
+	if discriminator != Instruction_SweepCreatorFee {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SweepCreatorFeeInstruction", Instruction_SweepCreatorFee, discriminator)
+	}
+	return nil
+}
+
+func (obj *SweepCreatorFeeInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from payer account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "payer", err)
+	}
+	indices = append(indices, index)
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SweepCreatorFeeInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 13 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 13, len(indices))
+	}
+	indexOffset := 0
+	// Set payer account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "payer", len(accountKeys)-1)
+	}
+	obj.Payer = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_mint", len(accountKeys)-1)
+	}
+	obj.BaseMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_token_program", len(accountKeys)-1)
+	}
+	obj.AssociatedTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
+	}
+	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "recipient", len(accountKeys)-1)
+	}
+	obj.Recipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_recipient", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteRecipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SweepCreatorFeeInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Payer)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.BaseMint)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.AssociatedTokenProgram)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.AssociatedQuoteBondingCurve)
+	keys = append(keys, obj.Recipient)
+	keys = append(keys, obj.AssociatedQuoteRecipient)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SweepCreatorFeeInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SweepCreatorFeeInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SweepCreatorFeeInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSweepCreatorFeeInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSweepCreatorFeeInstruction(buf []byte) (*SweepCreatorFeeInstruction, error) {
+	obj := new(SweepCreatorFeeInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type SweepProtocolFeeInstruction struct {
+
+	// Accounts:
+	Payer                               solanago.PublicKey `json:"payer"`
+	PayerWritable                       bool               `json:"payer_writable"`
+	PayerSigner                         bool               `json:"payer_signer"`
+	Global                              solanago.PublicKey `json:"global"`
+	BaseMint                            solanago.PublicKey `json:"base_mint"`
+	QuoteMint                           solanago.PublicKey `json:"quote_mint"`
+	QuoteTokenProgram                   solanago.PublicKey `json:"quote_token_program"`
+	AssociatedTokenProgram              solanago.PublicKey `json:"associated_token_program"`
+	SystemProgram                       solanago.PublicKey `json:"system_program"`
+	BondingCurve                        solanago.PublicKey `json:"bonding_curve"`
+	BondingCurveWritable                bool               `json:"bonding_curve_writable"`
+	AssociatedQuoteBondingCurve         solanago.PublicKey `json:"associated_quote_bonding_curve"`
+	AssociatedQuoteBondingCurveWritable bool               `json:"associated_quote_bonding_curve_writable"`
+	Recipient                           solanago.PublicKey `json:"recipient"`
+	RecipientWritable                   bool               `json:"recipient_writable"`
+	AssociatedQuoteRecipient            solanago.PublicKey `json:"associated_quote_recipient"`
+	AssociatedQuoteRecipientWritable    bool               `json:"associated_quote_recipient_writable"`
+	EventAuthority                      solanago.PublicKey `json:"event_authority"`
+	Program                             solanago.PublicKey `json:"program"`
+}
+
+func (obj *SweepProtocolFeeInstruction) GetDiscriminator() []byte {
+	return Instruction_SweepProtocolFee[:]
+}
+
+// UnmarshalWithDecoder unmarshals the SweepProtocolFeeInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *SweepProtocolFeeInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "SweepProtocolFeeInstruction", err)
+	}
+	if discriminator != Instruction_SweepProtocolFee {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "SweepProtocolFeeInstruction", Instruction_SweepProtocolFee, discriminator)
+	}
+	return nil
+}
+
+func (obj *SweepProtocolFeeInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from payer account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "payer", err)
+	}
+	indices = append(indices, index)
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from base_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "base_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_mint account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_mint", err)
+	}
+	indices = append(indices, index)
+	// Decode from quote_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "quote_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_token_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_token_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from system_program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "system_program", err)
+	}
+	indices = append(indices, index)
+	// Decode from bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_bonding_curve account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_bonding_curve", err)
+	}
+	indices = append(indices, index)
+	// Decode from recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from associated_quote_recipient account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "associated_quote_recipient", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *SweepProtocolFeeInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 13 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 13, len(indices))
+	}
+	indexOffset := 0
+	// Set payer account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "payer", len(accountKeys)-1)
+	}
+	obj.Payer = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set base_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "base_mint", len(accountKeys)-1)
+	}
+	obj.BaseMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_mint account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_mint", len(accountKeys)-1)
+	}
+	obj.QuoteMint = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set quote_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "quote_token_program", len(accountKeys)-1)
+	}
+	obj.QuoteTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_token_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_token_program", len(accountKeys)-1)
+	}
+	obj.AssociatedTokenProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set system_program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "system_program", len(accountKeys)-1)
+	}
+	obj.SystemProgram = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "bonding_curve", len(accountKeys)-1)
+	}
+	obj.BondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_bonding_curve account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_bonding_curve", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteBondingCurve = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "recipient", len(accountKeys)-1)
+	}
+	obj.Recipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set associated_quote_recipient account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "associated_quote_recipient", len(accountKeys)-1)
+	}
+	obj.AssociatedQuoteRecipient = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *SweepProtocolFeeInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Payer)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.BaseMint)
+	keys = append(keys, obj.QuoteMint)
+	keys = append(keys, obj.QuoteTokenProgram)
+	keys = append(keys, obj.AssociatedTokenProgram)
+	keys = append(keys, obj.SystemProgram)
+	keys = append(keys, obj.BondingCurve)
+	keys = append(keys, obj.AssociatedQuoteBondingCurve)
+	keys = append(keys, obj.Recipient)
+	keys = append(keys, obj.AssociatedQuoteRecipient)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the SweepProtocolFeeInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *SweepProtocolFeeInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SweepProtocolFeeInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalSweepProtocolFeeInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalSweepProtocolFeeInstruction(buf []byte) (*SweepProtocolFeeInstruction, error) {
+	obj := new(SweepProtocolFeeInstruction)
 	var err error
 	err = obj.Unmarshal(buf)
 	if err != nil {
@@ -10825,6 +16171,148 @@ func UnmarshalUpdateBuybackConfigInstruction(buf []byte) (*UpdateBuybackConfigIn
 	return obj, nil
 }
 
+type UpdateCreatorFeeConfigInstruction struct {
+	CreatorFeeConfigurable       bool   `json:"creator_fee_configurable"`
+	MaxConfigurableCreatorFeeBps uint64 `json:"max_configurable_creator_fee_bps"`
+
+	// Accounts:
+	Global            solanago.PublicKey `json:"global"`
+	GlobalWritable    bool               `json:"global_writable"`
+	Authority         solanago.PublicKey `json:"authority"`
+	AuthorityWritable bool               `json:"authority_writable"`
+	AuthoritySigner   bool               `json:"authority_signer"`
+	EventAuthority    solanago.PublicKey `json:"event_authority"`
+	Program           solanago.PublicKey `json:"program"`
+}
+
+func (obj *UpdateCreatorFeeConfigInstruction) GetDiscriminator() []byte {
+	return Instruction_UpdateCreatorFeeConfig[:]
+}
+
+// UnmarshalWithDecoder unmarshals the UpdateCreatorFeeConfigInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *UpdateCreatorFeeConfigInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "UpdateCreatorFeeConfigInstruction", err)
+	}
+	if discriminator != Instruction_UpdateCreatorFeeConfig {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "UpdateCreatorFeeConfigInstruction", Instruction_UpdateCreatorFeeConfig, discriminator)
+	}
+	// Deserialize `CreatorFeeConfigurable`:
+	err = decoder.Decode(&obj.CreatorFeeConfigurable)
+	if err != nil {
+		return err
+	}
+	// Deserialize `MaxConfigurableCreatorFeeBps`:
+	err = decoder.Decode(&obj.MaxConfigurableCreatorFeeBps)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *UpdateCreatorFeeConfigInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *UpdateCreatorFeeConfigInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 4 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 4, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *UpdateCreatorFeeConfigInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the UpdateCreatorFeeConfigInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *UpdateCreatorFeeConfigInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling UpdateCreatorFeeConfigInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalUpdateCreatorFeeConfigInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalUpdateCreatorFeeConfigInstruction(buf []byte) (*UpdateCreatorFeeConfigInstruction, error) {
+	obj := new(UpdateCreatorFeeConfigInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type UpdateGlobalAuthorityInstruction struct {
 
 	// Accounts:
@@ -10968,6 +16456,148 @@ func UnmarshalUpdateGlobalAuthorityInstruction(buf []byte) (*UpdateGlobalAuthori
 	return obj, nil
 }
 
+type UpdateHolderRewardConfigInstruction struct {
+	IsHolderRewardEnabled      bool               `json:"is_holder_reward_enabled"`
+	HolderRewardClaimAuthority solanago.PublicKey `json:"holder_reward_claim_authority"`
+
+	// Accounts:
+	Global            solanago.PublicKey `json:"global"`
+	GlobalWritable    bool               `json:"global_writable"`
+	Authority         solanago.PublicKey `json:"authority"`
+	AuthorityWritable bool               `json:"authority_writable"`
+	AuthoritySigner   bool               `json:"authority_signer"`
+	EventAuthority    solanago.PublicKey `json:"event_authority"`
+	Program           solanago.PublicKey `json:"program"`
+}
+
+func (obj *UpdateHolderRewardConfigInstruction) GetDiscriminator() []byte {
+	return Instruction_UpdateHolderRewardConfig[:]
+}
+
+// UnmarshalWithDecoder unmarshals the UpdateHolderRewardConfigInstruction from Borsh-encoded bytes prefixed with its discriminator.
+func (obj *UpdateHolderRewardConfigInstruction) UnmarshalWithDecoder(decoder *binary.Decoder) error {
+	var err error
+	// Read the discriminator and check it against the expected value:
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return fmt.Errorf("failed to read instruction discriminator for %s: %w", "UpdateHolderRewardConfigInstruction", err)
+	}
+	if discriminator != Instruction_UpdateHolderRewardConfig {
+		return fmt.Errorf("instruction discriminator mismatch for %s: expected %s, got %s", "UpdateHolderRewardConfigInstruction", Instruction_UpdateHolderRewardConfig, discriminator)
+	}
+	// Deserialize `IsHolderRewardEnabled`:
+	err = decoder.Decode(&obj.IsHolderRewardEnabled)
+	if err != nil {
+		return err
+	}
+	// Deserialize `HolderRewardClaimAuthority`:
+	err = decoder.Decode(&obj.HolderRewardClaimAuthority)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (obj *UpdateHolderRewardConfigInstruction) UnmarshalAccountIndices(buf []byte) ([]uint8, error) {
+	// UnmarshalAccountIndices decodes account indices from Borsh-encoded bytes
+	decoder := binary.NewBorshDecoder(buf)
+	indices := make([]uint8, 0)
+	index := uint8(0)
+	var err error
+	// Decode from global account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "global", err)
+	}
+	indices = append(indices, index)
+	// Decode from authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from event_authority account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "event_authority", err)
+	}
+	indices = append(indices, index)
+	// Decode from program account index
+	index = uint8(0)
+	err = decoder.Decode(&index)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s account index: %w", "program", err)
+	}
+	indices = append(indices, index)
+	return indices, nil
+}
+
+func (obj *UpdateHolderRewardConfigInstruction) PopulateFromAccountIndices(indices []uint8, accountKeys []solanago.PublicKey) error {
+	// PopulateFromAccountIndices sets account public keys from indices and account keys array
+	if len(indices) != 4 {
+		return fmt.Errorf("mismatch between expected accounts (%d) and provided indices (%d)", 4, len(indices))
+	}
+	indexOffset := 0
+	// Set global account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "global", len(accountKeys)-1)
+	}
+	obj.Global = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "authority", len(accountKeys)-1)
+	}
+	obj.Authority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set event_authority account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "event_authority", len(accountKeys)-1)
+	}
+	obj.EventAuthority = accountKeys[indices[indexOffset]]
+	indexOffset++
+	// Set program account from index
+	if indices[indexOffset] >= uint8(len(accountKeys)) {
+		return fmt.Errorf("account index %d for %s is out of bounds (max: %d)", indices[indexOffset], "program", len(accountKeys)-1)
+	}
+	obj.Program = accountKeys[indices[indexOffset]]
+	indexOffset++
+	return nil
+}
+
+func (obj *UpdateHolderRewardConfigInstruction) GetAccountKeys() []solanago.PublicKey {
+	keys := make([]solanago.PublicKey, 0)
+	keys = append(keys, obj.Global)
+	keys = append(keys, obj.Authority)
+	keys = append(keys, obj.EventAuthority)
+	keys = append(keys, obj.Program)
+	return keys
+}
+
+// Unmarshal unmarshals the UpdateHolderRewardConfigInstruction from Borsh-encoded bytes prefixed with the discriminator.
+func (obj *UpdateHolderRewardConfigInstruction) Unmarshal(buf []byte) error {
+	var err error
+	err = obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling UpdateHolderRewardConfigInstruction: %w", err)
+	}
+	return nil
+}
+
+// UnmarshalUpdateHolderRewardConfigInstruction unmarshals the instruction from Borsh-encoded bytes prefixed with the discriminator.
+func UnmarshalUpdateHolderRewardConfigInstruction(buf []byte) (*UpdateHolderRewardConfigInstruction, error) {
+	obj := new(UpdateHolderRewardConfigInstruction)
+	var err error
+	err = obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 // Instruction interface defines common methods for all instruction types
 type Instruction interface {
 	GetDiscriminator() []byte
@@ -10993,6 +16623,24 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 	copy(discriminator[:], instructionData[0:8])
 	// Parse based on discriminator
 	switch discriminator {
+	case Instruction_AddQuoteControlMint:
+		instruction := new(AddQuoteControlMintInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as AddQuoteControlMintInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_AddQuoteMint:
 		instruction := new(AddQuoteMintInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
@@ -11011,12 +16659,12 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
-	case Instruction_AdminSetCreator:
-		instruction := new(AdminSetCreatorInstruction)
+	case Instruction_AdminCto:
+		instruction := new(AdminCtoInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal instruction as AdminSetCreatorInstruction: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal instruction as AdminCtoInstruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
@@ -11101,6 +16749,24 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
+	case Instruction_BuyExactQuoteInV3:
+		instruction := new(BuyExactQuoteInV3Instruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as BuyExactQuoteInV3Instruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_BuyExactSolIn:
 		instruction := new(BuyExactSolInInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
@@ -11125,6 +16791,24 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal instruction as BuyV2Instruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_BuyV3:
+		instruction := new(BuyV3Instruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as BuyV3Instruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
@@ -11227,6 +16911,24 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
+	case Instruction_CollectCreatorFeeV2:
+		instruction := new(CollectCreatorFeeV2Instruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as CollectCreatorFeeV2Instruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_Create:
 		instruction := new(CreateInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
@@ -11269,6 +16971,42 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal instruction as DistributeCreatorFeesInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_DistributeCreatorFeesV2:
+		instruction := new(DistributeCreatorFeesV2Instruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as DistributeCreatorFeesV2Instruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_DistributeFeeToHolders:
+		instruction := new(DistributeFeeToHoldersInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as DistributeFeeToHoldersInstruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
@@ -11353,6 +17091,24 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
+	case Instruction_InitializeQuoteControl:
+		instruction := new(InitializeQuoteControlInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as InitializeQuoteControlInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_Migrate:
 		instruction := new(MigrateInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
@@ -11395,6 +17151,42 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal instruction as MigrateV2Instruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_MultiHopCurveSwap:
+		instruction := new(MultiHopCurveSwapInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as MultiHopCurveSwapInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_RemoveQuoteControlMint:
+		instruction := new(RemoveQuoteControlMintInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as RemoveQuoteControlMintInstruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
@@ -11461,12 +17253,48 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
+	case Instruction_SellV3:
+		instruction := new(SellV3Instruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SellV3Instruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_SetCreator:
 		instruction := new(SetCreatorInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal instruction as SetCreatorInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_SetMaxCurveDepth:
+		instruction := new(SetMaxCurveDepthInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SetMaxCurveDepthInstruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
@@ -11533,6 +17361,60 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
+	case Instruction_SetQuoteControlAdmin:
+		instruction := new(SetQuoteControlAdminInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SetQuoteControlAdminInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_SetQuoteControlMintReserves:
+		instruction := new(SetQuoteControlMintReservesInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SetQuoteControlMintReservesInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_SetQuoteControlReservesAdmin:
+		instruction := new(SetQuoteControlReservesAdminInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SetQuoteControlReservesAdminInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_SetReservedFeeRecipients:
 		instruction := new(SetReservedFeeRecipientsInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
@@ -11557,6 +17439,42 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal instruction as SetVirtualQuoteReservesInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_SweepCreatorFee:
+		instruction := new(SweepCreatorFeeInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SweepCreatorFeeInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_SweepProtocolFee:
+		instruction := new(SweepProtocolFeeInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as SweepProtocolFeeInstruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
@@ -11659,12 +17577,48 @@ func ParseInstruction(instructionData []byte, accountIndicesData []byte, account
 			}
 		}
 		return instruction, nil
+	case Instruction_UpdateCreatorFeeConfig:
+		instruction := new(UpdateCreatorFeeConfigInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as UpdateCreatorFeeConfigInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
 	case Instruction_UpdateGlobalAuthority:
 		instruction := new(UpdateGlobalAuthorityInstruction)
 		decoder := binary.NewBorshDecoder(instructionData)
 		err := instruction.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal instruction as UpdateGlobalAuthorityInstruction: %w", err)
+		}
+		if accountIndicesData != nil && len(accountIndicesData) > 0 {
+			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal account indices: %w", err)
+			}
+			err = instruction.PopulateFromAccountIndices(indices, accountKeys)
+			if err != nil {
+				return nil, fmt.Errorf("failed to populate accounts: %w", err)
+			}
+		}
+		return instruction, nil
+	case Instruction_UpdateHolderRewardConfig:
+		instruction := new(UpdateHolderRewardConfigInstruction)
+		decoder := binary.NewBorshDecoder(instructionData)
+		err := instruction.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal instruction as UpdateHolderRewardConfigInstruction: %w", err)
 		}
 		if accountIndicesData != nil && len(accountIndicesData) > 0 {
 			indices, err := instruction.UnmarshalAccountIndices(accountIndicesData)

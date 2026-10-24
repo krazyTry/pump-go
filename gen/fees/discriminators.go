@@ -6,6 +6,7 @@ package pump_fees
 // Account discriminators
 var (
 	Account_BondingCurve     = [8]byte{23, 183, 248, 55, 96, 216, 172, 96}
+	Account_BuybackVault     = [8]byte{153, 166, 71, 144, 179, 189, 137, 251}
 	Account_DonationFeePda   = [8]byte{246, 197, 96, 9, 193, 30, 93, 115}
 	Account_FeeConfig        = [8]byte{143, 52, 146, 187, 219, 123, 76, 155}
 	Account_FeeProgramGlobal = [8]byte{162, 165, 245, 49, 29, 37, 55, 242}
@@ -20,40 +21,58 @@ var (
 	Event_CreateFeeSharingConfigEvent     = [8]byte{133, 105, 170, 200, 184, 116, 251, 88}
 	Event_DonationFeePdaCranked           = [8]byte{30, 208, 107, 93, 177, 0, 223, 78}
 	Event_DonationFeePdaCreated           = [8]byte{94, 20, 137, 239, 35, 77, 225, 235}
+	Event_ExtendFeeConfigEvent            = [8]byte{226, 203, 224, 35, 153, 10, 88, 51}
 	Event_InitializeFeeConfigEvent        = [8]byte{89, 138, 244, 230, 10, 56, 226, 126}
 	Event_InitializeFeeProgramGlobalEvent = [8]byte{40, 233, 156, 78, 95, 0, 8, 199}
 	Event_ResetFeeSharingConfigEvent      = [8]byte{203, 204, 151, 226, 120, 55, 214, 243}
 	Event_SetAuthorityEvent               = [8]byte{18, 175, 132, 66, 208, 201, 87, 242}
 	Event_SetClaimRateLimitEvent          = [8]byte{13, 143, 143, 235, 181, 19, 51, 40}
 	Event_SetDisableFlagsEvent            = [8]byte{5, 8, 179, 65, 49, 55, 145, 126}
+	Event_SetExoticFlatFeesEvent          = [8]byte{195, 138, 108, 15, 8, 77, 68, 9}
 	Event_SetSocialClaimAuthorityEvent    = [8]byte{60, 118, 127, 132, 239, 52, 254, 14}
 	Event_SocialFeePdaClaimed             = [8]byte{50, 18, 193, 65, 237, 210, 234, 236}
 	Event_SocialFeePdaCreated             = [8]byte{183, 183, 218, 147, 24, 124, 137, 169}
+	Event_SweepBuybackEvent               = [8]byte{43, 56, 42, 214, 153, 57, 166, 137}
 	Event_UpdateAdminEvent                = [8]byte{225, 152, 171, 87, 246, 63, 66, 234}
 	Event_UpdateFeeConfigEvent            = [8]byte{90, 23, 65, 35, 62, 244, 188, 208}
 	Event_UpdateFeeSharesEvent            = [8]byte{21, 186, 196, 184, 91, 228, 225, 203}
+	Event_UpdateStableFeeConfigEvent      = [8]byte{94, 5, 43, 237, 103, 147, 232, 245}
 	Event_UpsertFeeTiersEvent             = [8]byte{171, 89, 169, 187, 122, 186, 33, 204}
+	Event_UpsertStableFeeTiersEvent       = [8]byte{232, 237, 237, 52, 98, 146, 73, 243}
+	Event_WithdrawEvent                   = [8]byte{22, 9, 133, 26, 160, 44, 71, 192}
 )
 
 // Instruction discriminators
 var (
+	Instruction_AdminCtoSharingConfig       = [8]byte{60, 100, 144, 156, 64, 138, 182, 37}
 	Instruction_ClaimSocialFeePda           = [8]byte{225, 21, 251, 133, 161, 30, 199, 226}
+	Instruction_ClaimSocialFeePdaV2         = [8]byte{17, 77, 240, 134, 58, 188, 53, 149}
 	Instruction_CrankDonationFeePda         = [8]byte{220, 10, 189, 167, 169, 17, 25, 69}
 	Instruction_CreateDonationFeePda        = [8]byte{244, 139, 16, 88, 14, 255, 122, 26}
 	Instruction_CreateFeeSharingConfig      = [8]byte{195, 78, 86, 76, 111, 52, 251, 213}
 	Instruction_CreateSocialFeePda          = [8]byte{144, 224, 59, 211, 78, 248, 202, 220}
+	Instruction_ExtendFeeConfig             = [8]byte{68, 179, 244, 90, 173, 56, 17, 217}
 	Instruction_GetFees                     = [8]byte{231, 37, 126, 85, 207, 91, 63, 52}
+	Instruction_GetFeesWithQuoteMint        = [8]byte{154, 237, 138, 92, 162, 2, 162, 187}
+	Instruction_InitializeBuyback           = [8]byte{250, 129, 236, 160, 227, 36, 103, 134}
 	Instruction_InitializeFeeConfig         = [8]byte{62, 162, 20, 133, 121, 65, 145, 27}
 	Instruction_InitializeFeeProgramGlobal  = [8]byte{35, 215, 130, 84, 233, 56, 124, 167}
-	Instruction_ResetFeeSharingConfig       = [8]byte{10, 2, 182, 95, 16, 127, 129, 186}
 	Instruction_RevokeFeeSharingAuthority   = [8]byte{18, 233, 158, 39, 185, 207, 58, 104}
 	Instruction_SetAuthority                = [8]byte{133, 250, 37, 21, 110, 163, 26, 121}
 	Instruction_SetClaimRateLimit           = [8]byte{185, 211, 159, 174, 212, 49, 88, 4}
 	Instruction_SetDisableFlags             = [8]byte{194, 217, 112, 35, 114, 222, 51, 190}
+	Instruction_SetExoticFlatFees           = [8]byte{30, 234, 149, 138, 252, 230, 39, 73}
 	Instruction_SetSocialClaimAuthority     = [8]byte{147, 54, 184, 154, 136, 237, 185, 153}
+	Instruction_SweepBuyback                = [8]byte{138, 33, 204, 38, 207, 161, 159, 226}
 	Instruction_TransferFeeSharingAuthority = [8]byte{202, 10, 75, 200, 164, 34, 210, 96}
 	Instruction_UpdateAdmin                 = [8]byte{161, 176, 40, 213, 60, 184, 179, 228}
+	Instruction_UpdateBuybackAuthority      = [8]byte{66, 98, 113, 202, 121, 37, 219, 107}
+	Instruction_UpdateBuybackClaimRateLimit = [8]byte{186, 95, 135, 190, 255, 199, 137, 170}
 	Instruction_UpdateFeeConfig             = [8]byte{104, 184, 103, 242, 88, 151, 107, 20}
 	Instruction_UpdateFeeShares             = [8]byte{189, 13, 136, 99, 187, 164, 237, 35}
+	Instruction_UpdateFeeSharesV2           = [8]byte{111, 251, 49, 6, 78, 78, 106, 18}
+	Instruction_UpdateStableFeeConfig       = [8]byte{107, 169, 100, 179, 134, 155, 146, 221}
 	Instruction_UpsertFeeTiers              = [8]byte{227, 23, 150, 12, 77, 86, 94, 4}
+	Instruction_UpsertStableFeeTiers        = [8]byte{181, 160, 162, 252, 74, 76, 224, 221}
+	Instruction_Withdraw                    = [8]byte{183, 18, 70, 156, 148, 109, 161, 34}
 )

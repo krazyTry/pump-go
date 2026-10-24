@@ -36,6 +36,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as DonationFeePdaCreated: %w", err)
 		}
 		return value, nil
+	case Event_ExtendFeeConfigEvent:
+		value := new(ExtendFeeConfigEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as ExtendFeeConfigEvent: %w", err)
+		}
+		return value, nil
 	case Event_InitializeFeeConfigEvent:
 		value := new(InitializeFeeConfigEvent)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -78,6 +85,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as SetDisableFlagsEvent: %w", err)
 		}
 		return value, nil
+	case Event_SetExoticFlatFeesEvent:
+		value := new(SetExoticFlatFeesEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SetExoticFlatFeesEvent: %w", err)
+		}
+		return value, nil
 	case Event_SetSocialClaimAuthorityEvent:
 		value := new(SetSocialClaimAuthorityEvent)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -97,6 +111,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as SocialFeePdaCreated: %w", err)
+		}
+		return value, nil
+	case Event_SweepBuybackEvent:
+		value := new(SweepBuybackEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SweepBuybackEvent: %w", err)
 		}
 		return value, nil
 	case Event_UpdateAdminEvent:
@@ -120,11 +141,32 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as UpdateFeeSharesEvent: %w", err)
 		}
 		return value, nil
+	case Event_UpdateStableFeeConfigEvent:
+		value := new(UpdateStableFeeConfigEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as UpdateStableFeeConfigEvent: %w", err)
+		}
+		return value, nil
 	case Event_UpsertFeeTiersEvent:
 		value := new(UpsertFeeTiersEvent)
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as UpsertFeeTiersEvent: %w", err)
+		}
+		return value, nil
+	case Event_UpsertStableFeeTiersEvent:
+		value := new(UpsertStableFeeTiersEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as UpsertStableFeeTiersEvent: %w", err)
+		}
+		return value, nil
+	case Event_WithdrawEvent:
+		value := new(WithdrawEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as WithdrawEvent: %w", err)
 		}
 		return value, nil
 	default:
@@ -179,6 +221,23 @@ func ParseEvent_DonationFeePdaCreated(eventData []byte) (*DonationFeePdaCreated,
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type DonationFeePdaCreated: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_ExtendFeeConfigEvent(eventData []byte) (*ExtendFeeConfigEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_ExtendFeeConfigEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_ExtendFeeConfigEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(ExtendFeeConfigEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type ExtendFeeConfigEvent: %w", err)
 	}
 	return event, nil
 }
@@ -285,6 +344,23 @@ func ParseEvent_SetDisableFlagsEvent(eventData []byte) (*SetDisableFlagsEvent, e
 	return event, nil
 }
 
+func ParseEvent_SetExoticFlatFeesEvent(eventData []byte) (*SetExoticFlatFeesEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SetExoticFlatFeesEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SetExoticFlatFeesEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SetExoticFlatFeesEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SetExoticFlatFeesEvent: %w", err)
+	}
+	return event, nil
+}
+
 func ParseEvent_SetSocialClaimAuthorityEvent(eventData []byte) (*SetSocialClaimAuthorityEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
@@ -332,6 +408,23 @@ func ParseEvent_SocialFeePdaCreated(eventData []byte) (*SocialFeePdaCreated, err
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type SocialFeePdaCreated: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_SweepBuybackEvent(eventData []byte) (*SweepBuybackEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SweepBuybackEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SweepBuybackEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SweepBuybackEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SweepBuybackEvent: %w", err)
 	}
 	return event, nil
 }
@@ -387,6 +480,23 @@ func ParseEvent_UpdateFeeSharesEvent(eventData []byte) (*UpdateFeeSharesEvent, e
 	return event, nil
 }
 
+func ParseEvent_UpdateStableFeeConfigEvent(eventData []byte) (*UpdateStableFeeConfigEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_UpdateStableFeeConfigEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_UpdateStableFeeConfigEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(UpdateStableFeeConfigEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type UpdateStableFeeConfigEvent: %w", err)
+	}
+	return event, nil
+}
+
 func ParseEvent_UpsertFeeTiersEvent(eventData []byte) (*UpsertFeeTiersEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
@@ -400,6 +510,40 @@ func ParseEvent_UpsertFeeTiersEvent(eventData []byte) (*UpsertFeeTiersEvent, err
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type UpsertFeeTiersEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_UpsertStableFeeTiersEvent(eventData []byte) (*UpsertStableFeeTiersEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_UpsertStableFeeTiersEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_UpsertStableFeeTiersEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(UpsertStableFeeTiersEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type UpsertStableFeeTiersEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_WithdrawEvent(eventData []byte) (*WithdrawEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_WithdrawEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_WithdrawEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(WithdrawEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type WithdrawEvent: %w", err)
 	}
 	return event, nil
 }

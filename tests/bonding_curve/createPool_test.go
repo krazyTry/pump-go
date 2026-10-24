@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/krazyTry/pump-go/bonding_curve"
 	"github.com/solana-foundation/solana-go/v2"
 	"github.com/solana-foundation/solana-go/v2/rpc"
-	"github.com/krazyTry/pump-go/bonding_curve"
 )
 
 // 7kCd7jFy6MMKSnL5So96RSSarsBDiBrxtTy7semGoBgZ 5Z9yeEAdetHyPVFuz4orcbDjeddo4VVrJ72CzvFBoseY6XM1zMdTC6wfQvgju4ntyHqgfGwUBptywzY2n1NFvFC1
@@ -97,6 +97,8 @@ func TestCreateV2Pool(t *testing.T) {
 		symbol,
 		uri,
 		false,
+		false,
+		0,
 		false,
 	)
 	if err != nil {

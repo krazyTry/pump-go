@@ -6,30 +6,29 @@ package pump_amm
 import (
 	"bytes"
 	"fmt"
+
 	errors "github.com/gagliardetto/anchor-go/errors"
 	binary "github.com/gagliardetto/binary"
 	solanago "github.com/solana-foundation/solana-go/v2"
 )
 
-type AdminSetCoinCreatorEvent struct {
-	Timestamp                    int64              `json:"timestamp"`
-	AdminSetCoinCreatorAuthority solanago.PublicKey `json:"admin_set_coin_creator_authority"`
-	BaseMint                     solanago.PublicKey `json:"base_mint"`
-	Pool                         solanago.PublicKey `json:"pool"`
-	OldCoinCreator               solanago.PublicKey `json:"old_coin_creator"`
-	NewCoinCreator               solanago.PublicKey `json:"new_coin_creator"`
+type AdminCtoPoolEvent struct {
+	Timestamp        int64              `json:"timestamp"`
+	BaseMint         solanago.PublicKey `json:"base_mint"`
+	Pool             solanago.PublicKey `json:"pool"`
+	OldCoinCreator   solanago.PublicKey `json:"old_coin_creator"`
+	NewCoinCreator   solanago.PublicKey `json:"new_coin_creator"`
+	IsHolderReward   bool               `json:"is_holder_reward"`
+	IsCashbackCoin   bool               `json:"is_cashback_coin"`
+	OldCreatorFeeBps uint64             `json:"old_creator_fee_bps"`
+	NewCreatorFeeBps uint64             `json:"new_creator_fee_bps"`
 }
 
-func (obj AdminSetCoinCreatorEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+func (obj AdminCtoPoolEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
 	// Serialize `Timestamp`:
 	err = encoder.Encode(obj.Timestamp)
 	if err != nil {
 		return errors.NewField("Timestamp", err)
-	}
-	// Serialize `AdminSetCoinCreatorAuthority`:
-	err = encoder.Encode(obj.AdminSetCoinCreatorAuthority)
-	if err != nil {
-		return errors.NewField("AdminSetCoinCreatorAuthority", err)
 	}
 	// Serialize `BaseMint`:
 	err = encoder.Encode(obj.BaseMint)
@@ -51,29 +50,44 @@ func (obj AdminSetCoinCreatorEvent) MarshalWithEncoder(encoder *binary.Encoder) 
 	if err != nil {
 		return errors.NewField("NewCoinCreator", err)
 	}
+	// Serialize `IsHolderReward`:
+	err = encoder.Encode(obj.IsHolderReward)
+	if err != nil {
+		return errors.NewField("IsHolderReward", err)
+	}
+	// Serialize `IsCashbackCoin`:
+	err = encoder.Encode(obj.IsCashbackCoin)
+	if err != nil {
+		return errors.NewField("IsCashbackCoin", err)
+	}
+	// Serialize `OldCreatorFeeBps`:
+	err = encoder.Encode(obj.OldCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("OldCreatorFeeBps", err)
+	}
+	// Serialize `NewCreatorFeeBps`:
+	err = encoder.Encode(obj.NewCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("NewCreatorFeeBps", err)
+	}
 	return nil
 }
 
-func (obj AdminSetCoinCreatorEvent) Marshal() ([]byte, error) {
+func (obj AdminCtoPoolEvent) Marshal() ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := binary.NewBorshEncoder(buf)
 	err := obj.MarshalWithEncoder(encoder)
 	if err != nil {
-		return nil, fmt.Errorf("error while encoding AdminSetCoinCreatorEvent: %w", err)
+		return nil, fmt.Errorf("error while encoding AdminCtoPoolEvent: %w", err)
 	}
 	return buf.Bytes(), nil
 }
 
-func (obj *AdminSetCoinCreatorEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+func (obj *AdminCtoPoolEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
 	// Deserialize `Timestamp`:
 	err = decoder.Decode(&obj.Timestamp)
 	if err != nil {
 		return errors.NewField("Timestamp", err)
-	}
-	// Deserialize `AdminSetCoinCreatorAuthority`:
-	err = decoder.Decode(&obj.AdminSetCoinCreatorAuthority)
-	if err != nil {
-		return errors.NewField("AdminSetCoinCreatorAuthority", err)
 	}
 	// Deserialize `BaseMint`:
 	err = decoder.Decode(&obj.BaseMint)
@@ -95,19 +109,39 @@ func (obj *AdminSetCoinCreatorEvent) UnmarshalWithDecoder(decoder *binary.Decode
 	if err != nil {
 		return errors.NewField("NewCoinCreator", err)
 	}
-	return nil
-}
-
-func (obj *AdminSetCoinCreatorEvent) Unmarshal(buf []byte) error {
-	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	// Deserialize `IsHolderReward`:
+	err = decoder.Decode(&obj.IsHolderReward)
 	if err != nil {
-		return fmt.Errorf("error while unmarshaling AdminSetCoinCreatorEvent: %w", err)
+		return errors.NewField("IsHolderReward", err)
+	}
+	// Deserialize `IsCashbackCoin`:
+	err = decoder.Decode(&obj.IsCashbackCoin)
+	if err != nil {
+		return errors.NewField("IsCashbackCoin", err)
+	}
+	// Deserialize `OldCreatorFeeBps`:
+	err = decoder.Decode(&obj.OldCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("OldCreatorFeeBps", err)
+	}
+	// Deserialize `NewCreatorFeeBps`:
+	err = decoder.Decode(&obj.NewCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("NewCreatorFeeBps", err)
 	}
 	return nil
 }
 
-func UnmarshalAdminSetCoinCreatorEvent(buf []byte) (*AdminSetCoinCreatorEvent, error) {
-	obj := new(AdminSetCoinCreatorEvent)
+func (obj *AdminCtoPoolEvent) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling AdminCtoPoolEvent: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalAdminCtoPoolEvent(buf []byte) (*AdminCtoPoolEvent, error) {
+	obj := new(AdminCtoPoolEvent)
 	err := obj.Unmarshal(buf)
 	if err != nil {
 		return nil, err
@@ -367,6 +401,176 @@ func UnmarshalBondingCurve(buf []byte) (*BondingCurve, error) {
 	return obj, nil
 }
 
+type BoostBuyAndBurnEvent struct {
+	Timestamp              int64              `json:"timestamp"`
+	Mint                   solanago.PublicKey `json:"mint"`
+	BondingCurve           solanago.PublicKey `json:"bonding_curve"`
+	Pool                   solanago.PublicKey `json:"pool"`
+	Authority              solanago.PublicKey `json:"authority"`
+	QuoteAmountInRequested uint64             `json:"quote_amount_in_requested"`
+	QuoteAmountInUsed      uint64             `json:"quote_amount_in_used"`
+	BaseAmountBurned       uint64             `json:"base_amount_burned"`
+	VirtualQuoteReserves   binary.Int128      `json:"virtual_quote_reserves"`
+	RealQuoteReservesAfter uint64             `json:"real_quote_reserves_after"`
+	BaseReservesAfter      uint64             `json:"base_reserves_after"`
+	BoostVaultRemaining    uint64             `json:"boost_vault_remaining"`
+}
+
+func (obj BoostBuyAndBurnEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+	// Serialize `Timestamp`:
+	err = encoder.Encode(obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Serialize `Mint`:
+	err = encoder.Encode(obj.Mint)
+	if err != nil {
+		return errors.NewField("Mint", err)
+	}
+	// Serialize `BondingCurve`:
+	err = encoder.Encode(obj.BondingCurve)
+	if err != nil {
+		return errors.NewField("BondingCurve", err)
+	}
+	// Serialize `Pool`:
+	err = encoder.Encode(obj.Pool)
+	if err != nil {
+		return errors.NewField("Pool", err)
+	}
+	// Serialize `Authority`:
+	err = encoder.Encode(obj.Authority)
+	if err != nil {
+		return errors.NewField("Authority", err)
+	}
+	// Serialize `QuoteAmountInRequested`:
+	err = encoder.Encode(obj.QuoteAmountInRequested)
+	if err != nil {
+		return errors.NewField("QuoteAmountInRequested", err)
+	}
+	// Serialize `QuoteAmountInUsed`:
+	err = encoder.Encode(obj.QuoteAmountInUsed)
+	if err != nil {
+		return errors.NewField("QuoteAmountInUsed", err)
+	}
+	// Serialize `BaseAmountBurned`:
+	err = encoder.Encode(obj.BaseAmountBurned)
+	if err != nil {
+		return errors.NewField("BaseAmountBurned", err)
+	}
+	// Serialize `VirtualQuoteReserves`:
+	err = encoder.Encode(obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Serialize `RealQuoteReservesAfter`:
+	err = encoder.Encode(obj.RealQuoteReservesAfter)
+	if err != nil {
+		return errors.NewField("RealQuoteReservesAfter", err)
+	}
+	// Serialize `BaseReservesAfter`:
+	err = encoder.Encode(obj.BaseReservesAfter)
+	if err != nil {
+		return errors.NewField("BaseReservesAfter", err)
+	}
+	// Serialize `BoostVaultRemaining`:
+	err = encoder.Encode(obj.BoostVaultRemaining)
+	if err != nil {
+		return errors.NewField("BoostVaultRemaining", err)
+	}
+	return nil
+}
+
+func (obj BoostBuyAndBurnEvent) Marshal() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := binary.NewBorshEncoder(buf)
+	err := obj.MarshalWithEncoder(encoder)
+	if err != nil {
+		return nil, fmt.Errorf("error while encoding BoostBuyAndBurnEvent: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (obj *BoostBuyAndBurnEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+	// Deserialize `Timestamp`:
+	err = decoder.Decode(&obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Deserialize `Mint`:
+	err = decoder.Decode(&obj.Mint)
+	if err != nil {
+		return errors.NewField("Mint", err)
+	}
+	// Deserialize `BondingCurve`:
+	err = decoder.Decode(&obj.BondingCurve)
+	if err != nil {
+		return errors.NewField("BondingCurve", err)
+	}
+	// Deserialize `Pool`:
+	err = decoder.Decode(&obj.Pool)
+	if err != nil {
+		return errors.NewField("Pool", err)
+	}
+	// Deserialize `Authority`:
+	err = decoder.Decode(&obj.Authority)
+	if err != nil {
+		return errors.NewField("Authority", err)
+	}
+	// Deserialize `QuoteAmountInRequested`:
+	err = decoder.Decode(&obj.QuoteAmountInRequested)
+	if err != nil {
+		return errors.NewField("QuoteAmountInRequested", err)
+	}
+	// Deserialize `QuoteAmountInUsed`:
+	err = decoder.Decode(&obj.QuoteAmountInUsed)
+	if err != nil {
+		return errors.NewField("QuoteAmountInUsed", err)
+	}
+	// Deserialize `BaseAmountBurned`:
+	err = decoder.Decode(&obj.BaseAmountBurned)
+	if err != nil {
+		return errors.NewField("BaseAmountBurned", err)
+	}
+	// Deserialize `VirtualQuoteReserves`:
+	err = decoder.Decode(&obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Deserialize `RealQuoteReservesAfter`:
+	err = decoder.Decode(&obj.RealQuoteReservesAfter)
+	if err != nil {
+		return errors.NewField("RealQuoteReservesAfter", err)
+	}
+	// Deserialize `BaseReservesAfter`:
+	err = decoder.Decode(&obj.BaseReservesAfter)
+	if err != nil {
+		return errors.NewField("BaseReservesAfter", err)
+	}
+	// Deserialize `BoostVaultRemaining`:
+	err = decoder.Decode(&obj.BoostVaultRemaining)
+	if err != nil {
+		return errors.NewField("BoostVaultRemaining", err)
+	}
+	return nil
+}
+
+func (obj *BoostBuyAndBurnEvent) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling BoostBuyAndBurnEvent: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalBoostBuyAndBurnEvent(buf []byte) (*BoostBuyAndBurnEvent, error) {
+	obj := new(BoostBuyAndBurnEvent)
+	err := obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 // ix_name: "buy" | "buy_exact_quote_in"
 type BuyEvent struct {
 	Timestamp                        int64              `json:"timestamp"`
@@ -403,6 +607,12 @@ type BuyEvent struct {
 	Cashback                         uint64             `json:"cashback"`
 	BuybackFeeBasisPoints            uint64             `json:"buyback_fee_basis_points"`
 	BuybackFee                       uint64             `json:"buyback_fee"`
+	VirtualQuoteReserves             binary.Int128      `json:"virtual_quote_reserves"`
+	CanBoost                         bool               `json:"can_boost"`
+	BaseSupply                       uint64             `json:"base_supply"`
+	HolderRewardsBps                 uint64             `json:"holder_rewards_bps"`
+	HolderRewards                    uint64             `json:"holder_rewards"`
+	CreatorFeeUnclaimed              uint64             `json:"creator_fee_unclaimed"`
 }
 
 func (obj BuyEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
@@ -575,6 +785,36 @@ func (obj BuyEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
 	err = encoder.Encode(obj.BuybackFee)
 	if err != nil {
 		return errors.NewField("BuybackFee", err)
+	}
+	// Serialize `VirtualQuoteReserves`:
+	err = encoder.Encode(obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Serialize `CanBoost`:
+	err = encoder.Encode(obj.CanBoost)
+	if err != nil {
+		return errors.NewField("CanBoost", err)
+	}
+	// Serialize `BaseSupply`:
+	err = encoder.Encode(obj.BaseSupply)
+	if err != nil {
+		return errors.NewField("BaseSupply", err)
+	}
+	// Serialize `HolderRewardsBps`:
+	err = encoder.Encode(obj.HolderRewardsBps)
+	if err != nil {
+		return errors.NewField("HolderRewardsBps", err)
+	}
+	// Serialize `HolderRewards`:
+	err = encoder.Encode(obj.HolderRewards)
+	if err != nil {
+		return errors.NewField("HolderRewards", err)
+	}
+	// Serialize `CreatorFeeUnclaimed`:
+	err = encoder.Encode(obj.CreatorFeeUnclaimed)
+	if err != nil {
+		return errors.NewField("CreatorFeeUnclaimed", err)
 	}
 	return nil
 }
@@ -759,6 +999,36 @@ func (obj *BuyEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
 	err = decoder.Decode(&obj.BuybackFee)
 	if err != nil {
 		return errors.NewField("BuybackFee", err)
+	}
+	// Deserialize `VirtualQuoteReserves`:
+	err = decoder.Decode(&obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Deserialize `CanBoost`:
+	err = decoder.Decode(&obj.CanBoost)
+	if err != nil {
+		return errors.NewField("CanBoost", err)
+	}
+	// Deserialize `BaseSupply`:
+	err = decoder.Decode(&obj.BaseSupply)
+	if err != nil {
+		return errors.NewField("BaseSupply", err)
+	}
+	// Deserialize `HolderRewardsBps`:
+	err = decoder.Decode(&obj.HolderRewardsBps)
+	if err != nil {
+		return errors.NewField("HolderRewardsBps", err)
+	}
+	// Deserialize `HolderRewards`:
+	err = decoder.Decode(&obj.HolderRewards)
+	if err != nil {
+		return errors.NewField("HolderRewards", err)
+	}
+	// Deserialize `CreatorFeeUnclaimed`:
+	err = decoder.Decode(&obj.CreatorFeeUnclaimed)
+	if err != nil {
+		return errors.NewField("CreatorFeeUnclaimed", err)
 	}
 	return nil
 }
@@ -1329,6 +1599,9 @@ type CreatePoolEvent struct {
 	UserQuoteTokenAccount solanago.PublicKey `json:"user_quote_token_account"`
 	CoinCreator           solanago.PublicKey `json:"coin_creator"`
 	IsMayhemMode          bool               `json:"is_mayhem_mode"`
+	CreatorFeeBps         uint64             `json:"creator_fee_bps"`
+	CanEditCreatorFee     bool               `json:"can_edit_creator_fee"`
+	IsHolderReward        bool               `json:"is_holder_reward"`
 }
 
 func (obj CreatePoolEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
@@ -1436,6 +1709,21 @@ func (obj CreatePoolEvent) MarshalWithEncoder(encoder *binary.Encoder) (err erro
 	err = encoder.Encode(obj.IsMayhemMode)
 	if err != nil {
 		return errors.NewField("IsMayhemMode", err)
+	}
+	// Serialize `CreatorFeeBps`:
+	err = encoder.Encode(obj.CreatorFeeBps)
+	if err != nil {
+		return errors.NewField("CreatorFeeBps", err)
+	}
+	// Serialize `CanEditCreatorFee`:
+	err = encoder.Encode(obj.CanEditCreatorFee)
+	if err != nil {
+		return errors.NewField("CanEditCreatorFee", err)
+	}
+	// Serialize `IsHolderReward`:
+	err = encoder.Encode(obj.IsHolderReward)
+	if err != nil {
+		return errors.NewField("IsHolderReward", err)
 	}
 	return nil
 }
@@ -1555,6 +1843,21 @@ func (obj *CreatePoolEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err e
 	err = decoder.Decode(&obj.IsMayhemMode)
 	if err != nil {
 		return errors.NewField("IsMayhemMode", err)
+	}
+	// Deserialize `CreatorFeeBps`:
+	err = decoder.Decode(&obj.CreatorFeeBps)
+	if err != nil {
+		return errors.NewField("CreatorFeeBps", err)
+	}
+	// Deserialize `CanEditCreatorFee`:
+	err = decoder.Decode(&obj.CanEditCreatorFee)
+	if err != nil {
+		return errors.NewField("CanEditCreatorFee", err)
+	}
+	// Deserialize `IsHolderReward`:
+	err = decoder.Decode(&obj.IsHolderReward)
+	if err != nil {
+		return errors.NewField("IsHolderReward", err)
 	}
 	return nil
 }
@@ -1999,10 +2302,12 @@ func UnmarshalExtendAccountEvent(buf []byte) (*ExtendAccountEvent, error) {
 }
 
 type FeeConfig struct {
-	Bump     uint8              `json:"bump"`
-	Admin    solanago.PublicKey `json:"admin"`
-	FlatFees Fees               `json:"flat_fees"`
-	FeeTiers []FeeTier          `json:"fee_tiers"`
+	Bump           uint8              `json:"bump"`
+	Admin          solanago.PublicKey `json:"admin"`
+	FlatFees       Fees               `json:"flat_fees"`
+	FeeTiers       []FeeTier          `json:"fee_tiers"`
+	StableFeeTiers []FeeTier          `json:"stable_fee_tiers"`
+	ExoticFlatFees Fees               `json:"exotic_flat_fees"`
 }
 
 func (obj FeeConfig) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
@@ -2025,6 +2330,16 @@ func (obj FeeConfig) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
 	err = encoder.Encode(obj.FeeTiers)
 	if err != nil {
 		return errors.NewField("FeeTiers", err)
+	}
+	// Serialize `StableFeeTiers`:
+	err = encoder.Encode(obj.StableFeeTiers)
+	if err != nil {
+		return errors.NewField("StableFeeTiers", err)
+	}
+	// Serialize `ExoticFlatFees`:
+	err = encoder.Encode(obj.ExoticFlatFees)
+	if err != nil {
+		return errors.NewField("ExoticFlatFees", err)
 	}
 	return nil
 }
@@ -2059,6 +2374,16 @@ func (obj *FeeConfig) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) 
 	err = decoder.Decode(&obj.FeeTiers)
 	if err != nil {
 		return errors.NewField("FeeTiers", err)
+	}
+	// Deserialize `StableFeeTiers`:
+	err = decoder.Decode(&obj.StableFeeTiers)
+	if err != nil {
+		return errors.NewField("StableFeeTiers", err)
+	}
+	// Deserialize `ExoticFlatFees`:
+	err = decoder.Decode(&obj.ExoticFlatFees)
+	if err != nil {
+		return errors.NewField("ExoticFlatFees", err)
 	}
 	return nil
 }
@@ -2238,6 +2563,10 @@ type GlobalConfig struct {
 	IsCashbackEnabled            bool                  `json:"is_cashback_enabled"`
 	BuybackFeeRecipients         [8]solanago.PublicKey `json:"buyback_fee_recipients"`
 	BuybackBasisPoints           uint64                `json:"buyback_basis_points"`
+	BoostAuthority               solanago.PublicKey    `json:"boost_authority"`
+	BoostEnabled                 bool                  `json:"boost_enabled"`
+	CreatorFeeConfigurable       bool                  `json:"creator_fee_configurable"`
+	MaxConfigurableCreatorFeeBps uint64                `json:"max_configurable_creator_fee_bps"`
 }
 
 func (obj GlobalConfig) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
@@ -2310,6 +2639,26 @@ func (obj GlobalConfig) MarshalWithEncoder(encoder *binary.Encoder) (err error) 
 	err = encoder.Encode(obj.BuybackBasisPoints)
 	if err != nil {
 		return errors.NewField("BuybackBasisPoints", err)
+	}
+	// Serialize `BoostAuthority`:
+	err = encoder.Encode(obj.BoostAuthority)
+	if err != nil {
+		return errors.NewField("BoostAuthority", err)
+	}
+	// Serialize `BoostEnabled`:
+	err = encoder.Encode(obj.BoostEnabled)
+	if err != nil {
+		return errors.NewField("BoostEnabled", err)
+	}
+	// Serialize `CreatorFeeConfigurable`:
+	err = encoder.Encode(obj.CreatorFeeConfigurable)
+	if err != nil {
+		return errors.NewField("CreatorFeeConfigurable", err)
+	}
+	// Serialize `MaxConfigurableCreatorFeeBps`:
+	err = encoder.Encode(obj.MaxConfigurableCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("MaxConfigurableCreatorFeeBps", err)
 	}
 	return nil
 }
@@ -2394,6 +2743,26 @@ func (obj *GlobalConfig) UnmarshalWithDecoder(decoder *binary.Decoder) (err erro
 	err = decoder.Decode(&obj.BuybackBasisPoints)
 	if err != nil {
 		return errors.NewField("BuybackBasisPoints", err)
+	}
+	// Deserialize `BoostAuthority`:
+	err = decoder.Decode(&obj.BoostAuthority)
+	if err != nil {
+		return errors.NewField("BoostAuthority", err)
+	}
+	// Deserialize `BoostEnabled`:
+	err = decoder.Decode(&obj.BoostEnabled)
+	if err != nil {
+		return errors.NewField("BoostEnabled", err)
+	}
+	// Deserialize `CreatorFeeConfigurable`:
+	err = decoder.Decode(&obj.CreatorFeeConfigurable)
+	if err != nil {
+		return errors.NewField("CreatorFeeConfigurable", err)
+	}
+	// Deserialize `MaxConfigurableCreatorFeeBps`:
+	err = decoder.Decode(&obj.MaxConfigurableCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("MaxConfigurableCreatorFeeBps", err)
 	}
 	return nil
 }
@@ -2512,6 +2881,110 @@ func (obj *GlobalVolumeAccumulator) Unmarshal(buf []byte) error {
 
 func UnmarshalGlobalVolumeAccumulator(buf []byte) (*GlobalVolumeAccumulator, error) {
 	obj := new(GlobalVolumeAccumulator)
+	err := obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type InitBoostEvent struct {
+	Timestamp              int64              `json:"timestamp"`
+	Mint                   solanago.PublicKey `json:"mint"`
+	BondingCurve           solanago.PublicKey `json:"bonding_curve"`
+	Pool                   solanago.PublicKey `json:"pool"`
+	VirtualQuoteReserves   binary.Int128      `json:"virtual_quote_reserves"`
+	RealQuoteReservesAfter uint64             `json:"real_quote_reserves_after"`
+}
+
+func (obj InitBoostEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+	// Serialize `Timestamp`:
+	err = encoder.Encode(obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Serialize `Mint`:
+	err = encoder.Encode(obj.Mint)
+	if err != nil {
+		return errors.NewField("Mint", err)
+	}
+	// Serialize `BondingCurve`:
+	err = encoder.Encode(obj.BondingCurve)
+	if err != nil {
+		return errors.NewField("BondingCurve", err)
+	}
+	// Serialize `Pool`:
+	err = encoder.Encode(obj.Pool)
+	if err != nil {
+		return errors.NewField("Pool", err)
+	}
+	// Serialize `VirtualQuoteReserves`:
+	err = encoder.Encode(obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Serialize `RealQuoteReservesAfter`:
+	err = encoder.Encode(obj.RealQuoteReservesAfter)
+	if err != nil {
+		return errors.NewField("RealQuoteReservesAfter", err)
+	}
+	return nil
+}
+
+func (obj InitBoostEvent) Marshal() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := binary.NewBorshEncoder(buf)
+	err := obj.MarshalWithEncoder(encoder)
+	if err != nil {
+		return nil, fmt.Errorf("error while encoding InitBoostEvent: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (obj *InitBoostEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+	// Deserialize `Timestamp`:
+	err = decoder.Decode(&obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Deserialize `Mint`:
+	err = decoder.Decode(&obj.Mint)
+	if err != nil {
+		return errors.NewField("Mint", err)
+	}
+	// Deserialize `BondingCurve`:
+	err = decoder.Decode(&obj.BondingCurve)
+	if err != nil {
+		return errors.NewField("BondingCurve", err)
+	}
+	// Deserialize `Pool`:
+	err = decoder.Decode(&obj.Pool)
+	if err != nil {
+		return errors.NewField("Pool", err)
+	}
+	// Deserialize `VirtualQuoteReserves`:
+	err = decoder.Decode(&obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Deserialize `RealQuoteReservesAfter`:
+	err = decoder.Decode(&obj.RealQuoteReservesAfter)
+	if err != nil {
+		return errors.NewField("RealQuoteReservesAfter", err)
+	}
+	return nil
+}
+
+func (obj *InitBoostEvent) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling InitBoostEvent: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalInitBoostEvent(buf []byte) (*InitBoostEvent, error) {
+	obj := new(InitBoostEvent)
 	err := obj.Unmarshal(buf)
 	if err != nil {
 		return nil, err
@@ -2743,6 +3216,55 @@ func UnmarshalOptionBool(buf []byte) (*OptionBool, error) {
 	return obj, nil
 }
 
+type OptionU64 struct {
+	V0 uint64 `json:"v0"`
+}
+
+func (obj OptionU64) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+	// Serialize `V0`:
+	err = encoder.Encode(obj.V0)
+	if err != nil {
+		return errors.NewField("V0", err)
+	}
+	return nil
+}
+
+func (obj OptionU64) Marshal() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := binary.NewBorshEncoder(buf)
+	err := obj.MarshalWithEncoder(encoder)
+	if err != nil {
+		return nil, fmt.Errorf("error while encoding OptionU64: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (obj *OptionU64) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+	// Deserialize `V0`:
+	err = decoder.Decode(&obj.V0)
+	if err != nil {
+		return errors.NewField("V0", err)
+	}
+	return nil
+}
+
+func (obj *OptionU64) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling OptionU64: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalOptionU64(buf []byte) (*OptionU64, error) {
+	obj := new(OptionU64)
+	err := obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type Pool struct {
 	PoolBump              uint8              `json:"pool_bump"`
 	Index                 uint16             `json:"index"`
@@ -2758,6 +3280,14 @@ type Pool struct {
 	CoinCreator    solanago.PublicKey `json:"coin_creator"`
 	IsMayhemMode   bool               `json:"is_mayhem_mode"`
 	IsCashbackCoin bool               `json:"is_cashback_coin"`
+
+	// For non-boost pools, value is 0, so the behavior is identical to legacy pools.
+	VirtualQuoteReserves binary.Int128 `json:"virtual_quote_reserves"`
+	CreatorFeeBps        uint64        `json:"creator_fee_bps"`
+	CanEditCreatorFee    bool          `json:"can_edit_creator_fee"`
+	IsHolderReward       bool          `json:"is_holder_reward"`
+	ProtocolFees         uint64        `json:"protocol_fees"`
+	CreatorFees          uint64        `json:"creator_fees"`
 }
 
 func (obj Pool) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
@@ -2820,6 +3350,36 @@ func (obj Pool) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
 	err = encoder.Encode(obj.IsCashbackCoin)
 	if err != nil {
 		return errors.NewField("IsCashbackCoin", err)
+	}
+	// Serialize `VirtualQuoteReserves`:
+	err = encoder.Encode(obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Serialize `CreatorFeeBps`:
+	err = encoder.Encode(obj.CreatorFeeBps)
+	if err != nil {
+		return errors.NewField("CreatorFeeBps", err)
+	}
+	// Serialize `CanEditCreatorFee`:
+	err = encoder.Encode(obj.CanEditCreatorFee)
+	if err != nil {
+		return errors.NewField("CanEditCreatorFee", err)
+	}
+	// Serialize `IsHolderReward`:
+	err = encoder.Encode(obj.IsHolderReward)
+	if err != nil {
+		return errors.NewField("IsHolderReward", err)
+	}
+	// Serialize `ProtocolFees`:
+	err = encoder.Encode(obj.ProtocolFees)
+	if err != nil {
+		return errors.NewField("ProtocolFees", err)
+	}
+	// Serialize `CreatorFees`:
+	err = encoder.Encode(obj.CreatorFees)
+	if err != nil {
+		return errors.NewField("CreatorFees", err)
 	}
 	return nil
 }
@@ -2894,6 +3454,36 @@ func (obj *Pool) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
 	err = decoder.Decode(&obj.IsCashbackCoin)
 	if err != nil {
 		return errors.NewField("IsCashbackCoin", err)
+	}
+	// Deserialize `VirtualQuoteReserves`:
+	err = decoder.Decode(&obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Deserialize `CreatorFeeBps`:
+	err = decoder.Decode(&obj.CreatorFeeBps)
+	if err != nil {
+		return errors.NewField("CreatorFeeBps", err)
+	}
+	// Deserialize `CanEditCreatorFee`:
+	err = decoder.Decode(&obj.CanEditCreatorFee)
+	if err != nil {
+		return errors.NewField("CanEditCreatorFee", err)
+	}
+	// Deserialize `IsHolderReward`:
+	err = decoder.Decode(&obj.IsHolderReward)
+	if err != nil {
+		return errors.NewField("IsHolderReward", err)
+	}
+	// Deserialize `ProtocolFees`:
+	err = decoder.Decode(&obj.ProtocolFees)
+	if err != nil {
+		return errors.NewField("ProtocolFees", err)
+	}
+	// Deserialize `CreatorFees`:
+	err = decoder.Decode(&obj.CreatorFees)
+	if err != nil {
+		return errors.NewField("CreatorFees", err)
 	}
 	return nil
 }
@@ -3014,6 +3604,12 @@ type SellEvent struct {
 	Cashback                         uint64             `json:"cashback"`
 	BuybackFeeBasisPoints            uint64             `json:"buyback_fee_basis_points"`
 	BuybackFee                       uint64             `json:"buyback_fee"`
+	VirtualQuoteReserves             binary.Int128      `json:"virtual_quote_reserves"`
+	CanBoost                         bool               `json:"can_boost"`
+	BaseSupply                       uint64             `json:"base_supply"`
+	HolderRewardsBps                 uint64             `json:"holder_rewards_bps"`
+	HolderRewards                    uint64             `json:"holder_rewards"`
+	CreatorFeeUnclaimed              uint64             `json:"creator_fee_unclaimed"`
 }
 
 func (obj SellEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
@@ -3151,6 +3747,36 @@ func (obj SellEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
 	err = encoder.Encode(obj.BuybackFee)
 	if err != nil {
 		return errors.NewField("BuybackFee", err)
+	}
+	// Serialize `VirtualQuoteReserves`:
+	err = encoder.Encode(obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Serialize `CanBoost`:
+	err = encoder.Encode(obj.CanBoost)
+	if err != nil {
+		return errors.NewField("CanBoost", err)
+	}
+	// Serialize `BaseSupply`:
+	err = encoder.Encode(obj.BaseSupply)
+	if err != nil {
+		return errors.NewField("BaseSupply", err)
+	}
+	// Serialize `HolderRewardsBps`:
+	err = encoder.Encode(obj.HolderRewardsBps)
+	if err != nil {
+		return errors.NewField("HolderRewardsBps", err)
+	}
+	// Serialize `HolderRewards`:
+	err = encoder.Encode(obj.HolderRewards)
+	if err != nil {
+		return errors.NewField("HolderRewards", err)
+	}
+	// Serialize `CreatorFeeUnclaimed`:
+	err = encoder.Encode(obj.CreatorFeeUnclaimed)
+	if err != nil {
+		return errors.NewField("CreatorFeeUnclaimed", err)
 	}
 	return nil
 }
@@ -3301,6 +3927,36 @@ func (obj *SellEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) 
 	if err != nil {
 		return errors.NewField("BuybackFee", err)
 	}
+	// Deserialize `VirtualQuoteReserves`:
+	err = decoder.Decode(&obj.VirtualQuoteReserves)
+	if err != nil {
+		return errors.NewField("VirtualQuoteReserves", err)
+	}
+	// Deserialize `CanBoost`:
+	err = decoder.Decode(&obj.CanBoost)
+	if err != nil {
+		return errors.NewField("CanBoost", err)
+	}
+	// Deserialize `BaseSupply`:
+	err = decoder.Decode(&obj.BaseSupply)
+	if err != nil {
+		return errors.NewField("BaseSupply", err)
+	}
+	// Deserialize `HolderRewardsBps`:
+	err = decoder.Decode(&obj.HolderRewardsBps)
+	if err != nil {
+		return errors.NewField("HolderRewardsBps", err)
+	}
+	// Deserialize `HolderRewards`:
+	err = decoder.Decode(&obj.HolderRewards)
+	if err != nil {
+		return errors.NewField("HolderRewards", err)
+	}
+	// Deserialize `CreatorFeeUnclaimed`:
+	err = decoder.Decode(&obj.CreatorFeeUnclaimed)
+	if err != nil {
+		return errors.NewField("CreatorFeeUnclaimed", err)
+	}
 	return nil
 }
 
@@ -3407,6 +4063,88 @@ func (obj *SetBondingCurveCoinCreatorEvent) Unmarshal(buf []byte) error {
 
 func UnmarshalSetBondingCurveCoinCreatorEvent(buf []byte) (*SetBondingCurveCoinCreatorEvent, error) {
 	obj := new(SetBondingCurveCoinCreatorEvent)
+	err := obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type SetBoostAuthorityEvent struct {
+	Timestamp         int64              `json:"timestamp"`
+	Admin             solanago.PublicKey `json:"admin"`
+	OldBoostAuthority solanago.PublicKey `json:"old_boost_authority"`
+	NewBoostAuthority solanago.PublicKey `json:"new_boost_authority"`
+}
+
+func (obj SetBoostAuthorityEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+	// Serialize `Timestamp`:
+	err = encoder.Encode(obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Serialize `Admin`:
+	err = encoder.Encode(obj.Admin)
+	if err != nil {
+		return errors.NewField("Admin", err)
+	}
+	// Serialize `OldBoostAuthority`:
+	err = encoder.Encode(obj.OldBoostAuthority)
+	if err != nil {
+		return errors.NewField("OldBoostAuthority", err)
+	}
+	// Serialize `NewBoostAuthority`:
+	err = encoder.Encode(obj.NewBoostAuthority)
+	if err != nil {
+		return errors.NewField("NewBoostAuthority", err)
+	}
+	return nil
+}
+
+func (obj SetBoostAuthorityEvent) Marshal() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := binary.NewBorshEncoder(buf)
+	err := obj.MarshalWithEncoder(encoder)
+	if err != nil {
+		return nil, fmt.Errorf("error while encoding SetBoostAuthorityEvent: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (obj *SetBoostAuthorityEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+	// Deserialize `Timestamp`:
+	err = decoder.Decode(&obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Deserialize `Admin`:
+	err = decoder.Decode(&obj.Admin)
+	if err != nil {
+		return errors.NewField("Admin", err)
+	}
+	// Deserialize `OldBoostAuthority`:
+	err = decoder.Decode(&obj.OldBoostAuthority)
+	if err != nil {
+		return errors.NewField("OldBoostAuthority", err)
+	}
+	// Deserialize `NewBoostAuthority`:
+	err = decoder.Decode(&obj.NewBoostAuthority)
+	if err != nil {
+		return errors.NewField("NewBoostAuthority", err)
+	}
+	return nil
+}
+
+func (obj *SetBoostAuthorityEvent) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SetBoostAuthorityEvent: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalSetBoostAuthorityEvent(buf []byte) (*SetBoostAuthorityEvent, error) {
+	obj := new(SetBoostAuthorityEvent)
 	err := obj.Unmarshal(buf)
 	if err != nil {
 		return nil, err
@@ -3682,6 +4420,132 @@ func UnmarshalSharingConfig(buf []byte) (*SharingConfig, error) {
 	return obj, nil
 }
 
+type SweepPoolFeeEvent struct {
+	Timestamp int64              `json:"timestamp"`
+	Pool      solanago.PublicKey `json:"pool"`
+	BaseMint  solanago.PublicKey `json:"base_mint"`
+	QuoteMint solanago.PublicKey `json:"quote_mint"`
+	Recipient solanago.PublicKey `json:"recipient"`
+	Payer     solanago.PublicKey `json:"payer"`
+	Amount    uint64             `json:"amount"`
+	Bucket    uint8              `json:"bucket"`
+}
+
+func (obj SweepPoolFeeEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+	// Serialize `Timestamp`:
+	err = encoder.Encode(obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Serialize `Pool`:
+	err = encoder.Encode(obj.Pool)
+	if err != nil {
+		return errors.NewField("Pool", err)
+	}
+	// Serialize `BaseMint`:
+	err = encoder.Encode(obj.BaseMint)
+	if err != nil {
+		return errors.NewField("BaseMint", err)
+	}
+	// Serialize `QuoteMint`:
+	err = encoder.Encode(obj.QuoteMint)
+	if err != nil {
+		return errors.NewField("QuoteMint", err)
+	}
+	// Serialize `Recipient`:
+	err = encoder.Encode(obj.Recipient)
+	if err != nil {
+		return errors.NewField("Recipient", err)
+	}
+	// Serialize `Payer`:
+	err = encoder.Encode(obj.Payer)
+	if err != nil {
+		return errors.NewField("Payer", err)
+	}
+	// Serialize `Amount`:
+	err = encoder.Encode(obj.Amount)
+	if err != nil {
+		return errors.NewField("Amount", err)
+	}
+	// Serialize `Bucket`:
+	err = encoder.Encode(obj.Bucket)
+	if err != nil {
+		return errors.NewField("Bucket", err)
+	}
+	return nil
+}
+
+func (obj SweepPoolFeeEvent) Marshal() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := binary.NewBorshEncoder(buf)
+	err := obj.MarshalWithEncoder(encoder)
+	if err != nil {
+		return nil, fmt.Errorf("error while encoding SweepPoolFeeEvent: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (obj *SweepPoolFeeEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+	// Deserialize `Timestamp`:
+	err = decoder.Decode(&obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Deserialize `Pool`:
+	err = decoder.Decode(&obj.Pool)
+	if err != nil {
+		return errors.NewField("Pool", err)
+	}
+	// Deserialize `BaseMint`:
+	err = decoder.Decode(&obj.BaseMint)
+	if err != nil {
+		return errors.NewField("BaseMint", err)
+	}
+	// Deserialize `QuoteMint`:
+	err = decoder.Decode(&obj.QuoteMint)
+	if err != nil {
+		return errors.NewField("QuoteMint", err)
+	}
+	// Deserialize `Recipient`:
+	err = decoder.Decode(&obj.Recipient)
+	if err != nil {
+		return errors.NewField("Recipient", err)
+	}
+	// Deserialize `Payer`:
+	err = decoder.Decode(&obj.Payer)
+	if err != nil {
+		return errors.NewField("Payer", err)
+	}
+	// Deserialize `Amount`:
+	err = decoder.Decode(&obj.Amount)
+	if err != nil {
+		return errors.NewField("Amount", err)
+	}
+	// Deserialize `Bucket`:
+	err = decoder.Decode(&obj.Bucket)
+	if err != nil {
+		return errors.NewField("Bucket", err)
+	}
+	return nil
+}
+
+func (obj *SweepPoolFeeEvent) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling SweepPoolFeeEvent: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalSweepPoolFeeEvent(buf []byte) (*SweepPoolFeeEvent, error) {
+	obj := new(SweepPoolFeeEvent)
+	err := obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
 type SyncUserVolumeAccumulatorEvent struct {
 	User                     solanago.PublicKey `json:"user"`
 	TotalClaimedTokensBefore uint64             `json:"total_claimed_tokens_before"`
@@ -3828,6 +4692,88 @@ func (obj *UpdateAdminEvent) Unmarshal(buf []byte) error {
 
 func UnmarshalUpdateAdminEvent(buf []byte) (*UpdateAdminEvent, error) {
 	obj := new(UpdateAdminEvent)
+	err := obj.Unmarshal(buf)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+type UpdateCreatorFeeConfigEvent struct {
+	Timestamp                    int64              `json:"timestamp"`
+	Admin                        solanago.PublicKey `json:"admin"`
+	CreatorFeeConfigurable       bool               `json:"creator_fee_configurable"`
+	MaxConfigurableCreatorFeeBps uint64             `json:"max_configurable_creator_fee_bps"`
+}
+
+func (obj UpdateCreatorFeeConfigEvent) MarshalWithEncoder(encoder *binary.Encoder) (err error) {
+	// Serialize `Timestamp`:
+	err = encoder.Encode(obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Serialize `Admin`:
+	err = encoder.Encode(obj.Admin)
+	if err != nil {
+		return errors.NewField("Admin", err)
+	}
+	// Serialize `CreatorFeeConfigurable`:
+	err = encoder.Encode(obj.CreatorFeeConfigurable)
+	if err != nil {
+		return errors.NewField("CreatorFeeConfigurable", err)
+	}
+	// Serialize `MaxConfigurableCreatorFeeBps`:
+	err = encoder.Encode(obj.MaxConfigurableCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("MaxConfigurableCreatorFeeBps", err)
+	}
+	return nil
+}
+
+func (obj UpdateCreatorFeeConfigEvent) Marshal() ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	encoder := binary.NewBorshEncoder(buf)
+	err := obj.MarshalWithEncoder(encoder)
+	if err != nil {
+		return nil, fmt.Errorf("error while encoding UpdateCreatorFeeConfigEvent: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func (obj *UpdateCreatorFeeConfigEvent) UnmarshalWithDecoder(decoder *binary.Decoder) (err error) {
+	// Deserialize `Timestamp`:
+	err = decoder.Decode(&obj.Timestamp)
+	if err != nil {
+		return errors.NewField("Timestamp", err)
+	}
+	// Deserialize `Admin`:
+	err = decoder.Decode(&obj.Admin)
+	if err != nil {
+		return errors.NewField("Admin", err)
+	}
+	// Deserialize `CreatorFeeConfigurable`:
+	err = decoder.Decode(&obj.CreatorFeeConfigurable)
+	if err != nil {
+		return errors.NewField("CreatorFeeConfigurable", err)
+	}
+	// Deserialize `MaxConfigurableCreatorFeeBps`:
+	err = decoder.Decode(&obj.MaxConfigurableCreatorFeeBps)
+	if err != nil {
+		return errors.NewField("MaxConfigurableCreatorFeeBps", err)
+	}
+	return nil
+}
+
+func (obj *UpdateCreatorFeeConfigEvent) Unmarshal(buf []byte) error {
+	err := obj.UnmarshalWithDecoder(binary.NewBorshDecoder(buf))
+	if err != nil {
+		return fmt.Errorf("error while unmarshaling UpdateCreatorFeeConfigEvent: %w", err)
+	}
+	return nil
+}
+
+func UnmarshalUpdateCreatorFeeConfigEvent(buf []byte) (*UpdateCreatorFeeConfigEvent, error) {
+	obj := new(UpdateCreatorFeeConfigEvent)
 	err := obj.Unmarshal(buf)
 	if err != nil {
 		return nil, err

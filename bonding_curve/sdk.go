@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	solana "github.com/solana-foundation/solana-go/v2"
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
 	amm "github.com/krazyTry/pump-go/gen/amm"
 	fees "github.com/krazyTry/pump-go/gen/fees"
 	pump "github.com/krazyTry/pump-go/gen/pump"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 // SPL-Token
@@ -55,6 +55,7 @@ func (s *Client) GetBuyInstruction(creator, user, baseMint, baseMintProgram, use
 		amount,
 		maxSolCost,
 		pump.OptionBool{V0: true},
+		pump.OptionBool{V0: true},
 		s.Global,
 		feeRecipient,
 		baseMint,
@@ -97,6 +98,7 @@ func (s *Client) GetBuyExactSolInInstruction(creator, user, baseMint, baseMintPr
 	ix, err := pump.NewBuyExactSolInInstruction(
 		amount,
 		tokenCost,
+		pump.OptionBool{V0: true},
 		pump.OptionBool{V0: true},
 		s.Global,
 		feeRecipient,

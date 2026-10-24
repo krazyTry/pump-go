@@ -22,6 +22,13 @@ func ParseAnyAccount(accountData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal account as BondingCurve: %w", err)
 		}
 		return value, nil
+	case Account_BuybackVault:
+		value := new(BuybackVault)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal account as BuybackVault: %w", err)
+		}
+		return value, nil
 	case Account_DonationFeePda:
 		value := new(DonationFeePda)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -89,6 +96,23 @@ func ParseAccount_BondingCurve(accountData []byte) (*BondingCurve, error) {
 	err = acc.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal account of type BondingCurve: %w", err)
+	}
+	return acc, nil
+}
+
+func ParseAccount_BuybackVault(accountData []byte) (*BuybackVault, error) {
+	decoder := binary.NewBorshDecoder(accountData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Account_BuybackVault {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Account_BuybackVault, binary.FormatDiscriminator(discriminator))
+	}
+	acc := new(BuybackVault)
+	err = acc.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal account of type BuybackVault: %w", err)
 	}
 	return acc, nil
 }

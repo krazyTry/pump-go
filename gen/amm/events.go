@@ -15,11 +15,11 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		return nil, fmt.Errorf("failed to peek event discriminator: %w", err)
 	}
 	switch discriminator {
-	case Event_AdminSetCoinCreatorEvent:
-		value := new(AdminSetCoinCreatorEvent)
+	case Event_AdminCtoPoolEvent:
+		value := new(AdminCtoPoolEvent)
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal event as AdminSetCoinCreatorEvent: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal event as AdminCtoPoolEvent: %w", err)
 		}
 		return value, nil
 	case Event_AdminUpdateTokenIncentivesEvent:
@@ -27,6 +27,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as AdminUpdateTokenIncentivesEvent: %w", err)
+		}
+		return value, nil
+	case Event_BoostBuyAndBurnEvent:
+		value := new(BoostBuyAndBurnEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as BoostBuyAndBurnEvent: %w", err)
 		}
 		return value, nil
 	case Event_BuyEvent:
@@ -99,6 +106,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as ExtendAccountEvent: %w", err)
 		}
 		return value, nil
+	case Event_InitBoostEvent:
+		value := new(InitBoostEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as InitBoostEvent: %w", err)
+		}
+		return value, nil
 	case Event_InitUserVolumeAccumulatorEvent:
 		value := new(InitUserVolumeAccumulatorEvent)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -134,11 +148,25 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as SetBondingCurveCoinCreatorEvent: %w", err)
 		}
 		return value, nil
+	case Event_SetBoostAuthorityEvent:
+		value := new(SetBoostAuthorityEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SetBoostAuthorityEvent: %w", err)
+		}
+		return value, nil
 	case Event_SetMetaplexCoinCreatorEvent:
 		value := new(SetMetaplexCoinCreatorEvent)
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as SetMetaplexCoinCreatorEvent: %w", err)
+		}
+		return value, nil
+	case Event_SweepPoolFeeEvent:
+		value := new(SweepPoolFeeEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SweepPoolFeeEvent: %w", err)
 		}
 		return value, nil
 	case Event_SyncUserVolumeAccumulatorEvent:
@@ -153,6 +181,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as UpdateAdminEvent: %w", err)
+		}
+		return value, nil
+	case Event_UpdateCreatorFeeConfigEvent:
+		value := new(UpdateCreatorFeeConfigEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as UpdateCreatorFeeConfigEvent: %w", err)
 		}
 		return value, nil
 	case Event_UpdateFeeConfigEvent:
@@ -174,19 +209,19 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 	}
 }
 
-func ParseEvent_AdminSetCoinCreatorEvent(eventData []byte) (*AdminSetCoinCreatorEvent, error) {
+func ParseEvent_AdminCtoPoolEvent(eventData []byte) (*AdminCtoPoolEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
 	if err != nil {
 		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
 	}
-	if discriminator != Event_AdminSetCoinCreatorEvent {
-		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_AdminSetCoinCreatorEvent, binary.FormatDiscriminator(discriminator))
+	if discriminator != Event_AdminCtoPoolEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_AdminCtoPoolEvent, binary.FormatDiscriminator(discriminator))
 	}
-	event := new(AdminSetCoinCreatorEvent)
+	event := new(AdminCtoPoolEvent)
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal event of type AdminSetCoinCreatorEvent: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal event of type AdminCtoPoolEvent: %w", err)
 	}
 	return event, nil
 }
@@ -204,6 +239,23 @@ func ParseEvent_AdminUpdateTokenIncentivesEvent(eventData []byte) (*AdminUpdateT
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type AdminUpdateTokenIncentivesEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_BoostBuyAndBurnEvent(eventData []byte) (*BoostBuyAndBurnEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_BoostBuyAndBurnEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_BoostBuyAndBurnEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(BoostBuyAndBurnEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type BoostBuyAndBurnEvent: %w", err)
 	}
 	return event, nil
 }
@@ -378,6 +430,23 @@ func ParseEvent_ExtendAccountEvent(eventData []byte) (*ExtendAccountEvent, error
 	return event, nil
 }
 
+func ParseEvent_InitBoostEvent(eventData []byte) (*InitBoostEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_InitBoostEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_InitBoostEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(InitBoostEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type InitBoostEvent: %w", err)
+	}
+	return event, nil
+}
+
 func ParseEvent_InitUserVolumeAccumulatorEvent(eventData []byte) (*InitUserVolumeAccumulatorEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
@@ -463,6 +532,23 @@ func ParseEvent_SetBondingCurveCoinCreatorEvent(eventData []byte) (*SetBondingCu
 	return event, nil
 }
 
+func ParseEvent_SetBoostAuthorityEvent(eventData []byte) (*SetBoostAuthorityEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SetBoostAuthorityEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SetBoostAuthorityEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SetBoostAuthorityEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SetBoostAuthorityEvent: %w", err)
+	}
+	return event, nil
+}
+
 func ParseEvent_SetMetaplexCoinCreatorEvent(eventData []byte) (*SetMetaplexCoinCreatorEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
@@ -476,6 +562,23 @@ func ParseEvent_SetMetaplexCoinCreatorEvent(eventData []byte) (*SetMetaplexCoinC
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type SetMetaplexCoinCreatorEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_SweepPoolFeeEvent(eventData []byte) (*SweepPoolFeeEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SweepPoolFeeEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SweepPoolFeeEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SweepPoolFeeEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SweepPoolFeeEvent: %w", err)
 	}
 	return event, nil
 }
@@ -510,6 +613,23 @@ func ParseEvent_UpdateAdminEvent(eventData []byte) (*UpdateAdminEvent, error) {
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type UpdateAdminEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_UpdateCreatorFeeConfigEvent(eventData []byte) (*UpdateCreatorFeeConfigEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_UpdateCreatorFeeConfigEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_UpdateCreatorFeeConfigEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(UpdateCreatorFeeConfigEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type UpdateCreatorFeeConfigEvent: %w", err)
 	}
 	return event, nil
 }

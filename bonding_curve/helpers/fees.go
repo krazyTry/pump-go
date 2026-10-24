@@ -1,9 +1,11 @@
 package helpers
 
 import (
-	solana "github.com/solana-foundation/solana-go/v2"
+	"slices"
+
 	pump "github.com/krazyTry/pump-go/gen/pump"
 	"github.com/shopspring/decimal"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 const (
@@ -31,9 +33,9 @@ func CalculateFeeTier(feeTiers []pump.FeeTier, marketCap uint64) pump.Fees {
 	if marketCap < first.MarketCapLamportsThreshold.BigInt().Uint64() {
 		return first.Fees
 	}
-	for i := len(feeTiers) - 1; i >= 0; i-- {
-		if marketCap >= feeTiers[i].MarketCapLamportsThreshold.BigInt().Uint64() {
-			return feeTiers[i].Fees
+	for _, feeTier := range slices.Backward(feeTiers) {
+		if marketCap >= feeTier.MarketCapLamportsThreshold.BigInt().Uint64() {
+			return feeTier.Fees
 		}
 	}
 	return first.Fees

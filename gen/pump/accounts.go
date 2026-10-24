@@ -43,6 +43,13 @@ func ParseAnyAccount(accountData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal account as GlobalVolumeAccumulator: %w", err)
 		}
 		return value, nil
+	case Account_QuoteControl:
+		value := new(QuoteControl)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal account as QuoteControl: %w", err)
+		}
+		return value, nil
 	case Account_SharingConfig:
 		value := new(SharingConfig)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -126,6 +133,23 @@ func ParseAccount_GlobalVolumeAccumulator(accountData []byte) (*GlobalVolumeAccu
 	err = acc.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal account of type GlobalVolumeAccumulator: %w", err)
+	}
+	return acc, nil
+}
+
+func ParseAccount_QuoteControl(accountData []byte) (*QuoteControl, error) {
+	decoder := binary.NewBorshDecoder(accountData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Account_QuoteControl {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Account_QuoteControl, binary.FormatDiscriminator(discriminator))
+	}
+	acc := new(QuoteControl)
+	err = acc.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal account of type QuoteControl: %w", err)
 	}
 	return acc, nil
 }

@@ -3,9 +3,9 @@ package bonding_curve
 import (
 	"context"
 
-	solana "github.com/solana-foundation/solana-go/v2"
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
 	pump "github.com/krazyTry/pump-go/gen/pump"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 // Deprecated: Use CreateAndBuyV2Instructions.
@@ -60,7 +60,7 @@ func (c *Client) CreateAndBuyInstructions(ctx context.Context, global *pump.Glob
 	}(), nil
 }
 
-func (c *Client) CreateAndBuyV2Instructions(ctx context.Context, global *pump.Global, creator, user, baseMint solana.PublicKey, name, symbol, uri string, amount, solAmount uint64) ([]solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
+func (c *Client) CreateAndBuyV2Instructions(ctx context.Context, global *pump.Global, creator, user, baseMint solana.PublicKey, name, symbol, uri string, partialFill bool, amount, solAmount uint64) ([]solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	baseTokenProgram := solana.TokenProgramID
 	quoteMint := solana.WrappedSol
 	quoteTokenProgram := solana.TokenProgramID
@@ -103,6 +103,7 @@ func (c *Client) CreateAndBuyV2Instructions(ctx context.Context, global *pump.Gl
 
 	buyIx, err := c.GetBuyV2Instruction(
 		creator,
+		partialFill,
 		user,
 		baseMint,
 		quoteMint,
@@ -123,8 +124,8 @@ func (c *Client) CreateAndBuyV2Instructions(ctx context.Context, global *pump.Gl
 }
 
 // Deprecated: Use CreateV2AndBuyV2Instructions.
-func (c *Client) CreateV2AndBuyInstructions(ctx context.Context, global *pump.Global, baseMint solana.PublicKey, name, symbol, uri string, creator, user solana.PublicKey, amount, solAmount uint64, mayhemMode bool, cashback bool) ([]solana.Instruction, error) {
-	createIx, err := c.CreateV2Instruction(creator, user, baseMint, solana.WrappedSol, solana.TokenProgramID, name, symbol, uri, mayhemMode, cashback)
+func (c *Client) CreateV2AndBuyInstructions(ctx context.Context, global *pump.Global, baseMint solana.PublicKey, name, symbol, uri string, creator, user solana.PublicKey, amount, solAmount uint64, mayhemMode bool, cashback bool, creatorFeeBps uint64, isHolderReward bool) ([]solana.Instruction, error) {
+	createIx, err := c.CreateV2Instruction(creator, user, baseMint, solana.WrappedSol, solana.TokenProgramID, name, symbol, uri, mayhemMode, cashback, creatorFeeBps, isHolderReward)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +176,7 @@ func (c *Client) CreateV2AndBuyInstructions(ctx context.Context, global *pump.Gl
 	}(), nil
 }
 
-func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.Global, creator, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram solana.PublicKey, name, symbol, uri string, amount, quoteAmount uint64, mayhemMode bool, cashback bool) ([]solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
+func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.Global, creator, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram solana.PublicKey, name, symbol, uri string, amount, quoteAmount uint64, mayhemMode bool, cashback bool, creatorFeeBps uint64, isHolderReward bool, partialFill bool) ([]solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	if quoteMint.Equals(solana.PublicKey{}) {
 		quoteMint = solana.WrappedSol
 	}
@@ -183,7 +184,7 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 		quoteTokenProgram = solana.TokenProgramID
 	}
 
-	createIx, err := c.CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTokenProgram, name, symbol, uri, mayhemMode, cashback)
+	createIx, err := c.CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTokenProgram, name, symbol, uri, mayhemMode, cashback, creatorFeeBps, isHolderReward)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -222,6 +223,7 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 
 	buyIx, err := c.GetBuyV2Instruction(
 		creator,
+		partialFill,
 		user,
 		baseMint,
 		quoteMint,
@@ -283,7 +285,7 @@ func (c *Client) BuyInstructions(ctx context.Context, global *pump.Global, bondi
 	return ix, pre, post, nil
 }
 
-func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram solana.PublicKey, amount, quoteAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
+func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, partialFill bool, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram solana.PublicKey, amount, quoteAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 
 	if quoteMint.Equals(solana.PublicKey{}) || quoteMint.Equals(solana.WrappedSol) {
 		quoteMint = solana.WrappedSol
@@ -326,6 +328,7 @@ func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bon
 
 	ix, err := c.GetBuyV2Instruction(
 		bondingCurve.Creator,
+		partialFill,
 		user,
 		baseMint,
 		quoteMint,

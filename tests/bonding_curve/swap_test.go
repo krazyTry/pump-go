@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/solana-foundation/solana-go/v2"
-	"github.com/solana-foundation/solana-go/v2/rpc"
 	"github.com/krazyTry/pump-go/bonding_curve"
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
+	"github.com/solana-foundation/solana-go/v2"
+	"github.com/solana-foundation/solana-go/v2/rpc"
 )
 
 func TestSwap(t *testing.T) {
@@ -186,7 +186,7 @@ func TestSwapV2(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		buyIx, pre, post, err := pumpService.BuyV2Instructions(context.Background(), global, bondingCurve, partner.PublicKey(), baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, amountIn, solAmount, 10)
+		buyIx, pre, post, err := pumpService.BuyV2Instructions(context.Background(), global, bondingCurve, false, partner.PublicKey(), baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, amountIn, solAmount, 10)
 		if err != nil {
 			t.Fatal(err)
 		}

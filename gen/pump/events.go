@@ -15,11 +15,18 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		return nil, fmt.Errorf("failed to peek event discriminator: %w", err)
 	}
 	switch discriminator {
-	case Event_AdminSetCreatorEvent:
-		value := new(AdminSetCreatorEvent)
+	case Event_AddQuoteControlMintEvent:
+		value := new(AddQuoteControlMintEvent)
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal event as AdminSetCreatorEvent: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal event as AddQuoteControlMintEvent: %w", err)
+		}
+		return value, nil
+	case Event_AdminCtoEvent:
+		value := new(AdminCtoEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as AdminCtoEvent: %w", err)
 		}
 		return value, nil
 	case Event_AdminSetIdlAuthorityEvent:
@@ -92,6 +99,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as DistributeCreatorFeesEvent: %w", err)
 		}
 		return value, nil
+	case Event_DistributeFeeToHoldersEvent:
+		value := new(DistributeFeeToHoldersEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as DistributeFeeToHoldersEvent: %w", err)
+		}
+		return value, nil
 	case Event_ExtendAccountEvent:
 		value := new(ExtendAccountEvent)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -118,6 +132,20 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as MinimumDistributableFeeEvent: %w", err)
+		}
+		return value, nil
+	case Event_PostCompleteBuyEvent:
+		value := new(PostCompleteBuyEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as PostCompleteBuyEvent: %w", err)
+		}
+		return value, nil
+	case Event_RemoveQuoteControlMintEvent:
+		value := new(RemoveQuoteControlMintEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as RemoveQuoteControlMintEvent: %w", err)
 		}
 		return value, nil
 	case Event_ReservedFeeRecipientsEvent:
@@ -148,6 +176,34 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 			return nil, fmt.Errorf("failed to unmarshal event as SetParamsEvent: %w", err)
 		}
 		return value, nil
+	case Event_SetQuoteControlAdminEvent:
+		value := new(SetQuoteControlAdminEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SetQuoteControlAdminEvent: %w", err)
+		}
+		return value, nil
+	case Event_SetQuoteControlMintReservesEvent:
+		value := new(SetQuoteControlMintReservesEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SetQuoteControlMintReservesEvent: %w", err)
+		}
+		return value, nil
+	case Event_SetQuoteControlReservesAdminEvent:
+		value := new(SetQuoteControlReservesAdminEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SetQuoteControlReservesAdminEvent: %w", err)
+		}
+		return value, nil
+	case Event_SweepBondingCurveFeeEvent:
+		value := new(SweepBondingCurveFeeEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as SweepBondingCurveFeeEvent: %w", err)
+		}
+		return value, nil
 	case Event_SyncUserVolumeAccumulatorEvent:
 		value := new(SyncUserVolumeAccumulatorEvent)
 		err := value.UnmarshalWithDecoder(decoder)
@@ -160,6 +216,13 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 		err := value.UnmarshalWithDecoder(decoder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal event as TradeEvent: %w", err)
+		}
+		return value, nil
+	case Event_UpdateCreatorFeeConfigEvent:
+		value := new(UpdateCreatorFeeConfigEvent)
+		err := value.UnmarshalWithDecoder(decoder)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal event as UpdateCreatorFeeConfigEvent: %w", err)
 		}
 		return value, nil
 	case Event_UpdateGlobalAuthorityEvent:
@@ -181,19 +244,36 @@ func ParseAnyEvent(eventData []byte) (any, error) {
 	}
 }
 
-func ParseEvent_AdminSetCreatorEvent(eventData []byte) (*AdminSetCreatorEvent, error) {
+func ParseEvent_AddQuoteControlMintEvent(eventData []byte) (*AddQuoteControlMintEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
 	if err != nil {
 		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
 	}
-	if discriminator != Event_AdminSetCreatorEvent {
-		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_AdminSetCreatorEvent, binary.FormatDiscriminator(discriminator))
+	if discriminator != Event_AddQuoteControlMintEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_AddQuoteControlMintEvent, binary.FormatDiscriminator(discriminator))
 	}
-	event := new(AdminSetCreatorEvent)
+	event := new(AddQuoteControlMintEvent)
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal event of type AdminSetCreatorEvent: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal event of type AddQuoteControlMintEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_AdminCtoEvent(eventData []byte) (*AdminCtoEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_AdminCtoEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_AdminCtoEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(AdminCtoEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type AdminCtoEvent: %w", err)
 	}
 	return event, nil
 }
@@ -368,6 +448,23 @@ func ParseEvent_DistributeCreatorFeesEvent(eventData []byte) (*DistributeCreator
 	return event, nil
 }
 
+func ParseEvent_DistributeFeeToHoldersEvent(eventData []byte) (*DistributeFeeToHoldersEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_DistributeFeeToHoldersEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_DistributeFeeToHoldersEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(DistributeFeeToHoldersEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type DistributeFeeToHoldersEvent: %w", err)
+	}
+	return event, nil
+}
+
 func ParseEvent_ExtendAccountEvent(eventData []byte) (*ExtendAccountEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
@@ -432,6 +529,40 @@ func ParseEvent_MinimumDistributableFeeEvent(eventData []byte) (*MinimumDistribu
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type MinimumDistributableFeeEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_PostCompleteBuyEvent(eventData []byte) (*PostCompleteBuyEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_PostCompleteBuyEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_PostCompleteBuyEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(PostCompleteBuyEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type PostCompleteBuyEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_RemoveQuoteControlMintEvent(eventData []byte) (*RemoveQuoteControlMintEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_RemoveQuoteControlMintEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_RemoveQuoteControlMintEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(RemoveQuoteControlMintEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type RemoveQuoteControlMintEvent: %w", err)
 	}
 	return event, nil
 }
@@ -504,6 +635,74 @@ func ParseEvent_SetParamsEvent(eventData []byte) (*SetParamsEvent, error) {
 	return event, nil
 }
 
+func ParseEvent_SetQuoteControlAdminEvent(eventData []byte) (*SetQuoteControlAdminEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SetQuoteControlAdminEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SetQuoteControlAdminEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SetQuoteControlAdminEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SetQuoteControlAdminEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_SetQuoteControlMintReservesEvent(eventData []byte) (*SetQuoteControlMintReservesEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SetQuoteControlMintReservesEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SetQuoteControlMintReservesEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SetQuoteControlMintReservesEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SetQuoteControlMintReservesEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_SetQuoteControlReservesAdminEvent(eventData []byte) (*SetQuoteControlReservesAdminEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SetQuoteControlReservesAdminEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SetQuoteControlReservesAdminEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SetQuoteControlReservesAdminEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SetQuoteControlReservesAdminEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_SweepBondingCurveFeeEvent(eventData []byte) (*SweepBondingCurveFeeEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_SweepBondingCurveFeeEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_SweepBondingCurveFeeEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(SweepBondingCurveFeeEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type SweepBondingCurveFeeEvent: %w", err)
+	}
+	return event, nil
+}
+
 func ParseEvent_SyncUserVolumeAccumulatorEvent(eventData []byte) (*SyncUserVolumeAccumulatorEvent, error) {
 	decoder := binary.NewBorshDecoder(eventData)
 	discriminator, err := decoder.ReadDiscriminator()
@@ -534,6 +733,23 @@ func ParseEvent_TradeEvent(eventData []byte) (*TradeEvent, error) {
 	err = event.UnmarshalWithDecoder(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event of type TradeEvent: %w", err)
+	}
+	return event, nil
+}
+
+func ParseEvent_UpdateCreatorFeeConfigEvent(eventData []byte) (*UpdateCreatorFeeConfigEvent, error) {
+	decoder := binary.NewBorshDecoder(eventData)
+	discriminator, err := decoder.ReadDiscriminator()
+	if err != nil {
+		return nil, fmt.Errorf("failed to peek discriminator: %w", err)
+	}
+	if discriminator != Event_UpdateCreatorFeeConfigEvent {
+		return nil, fmt.Errorf("expected discriminator %v, got %s", Event_UpdateCreatorFeeConfigEvent, binary.FormatDiscriminator(discriminator))
+	}
+	event := new(UpdateCreatorFeeConfigEvent)
+	err = event.UnmarshalWithDecoder(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal event of type UpdateCreatorFeeConfigEvent: %w", err)
 	}
 	return event, nil
 }

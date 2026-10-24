@@ -1,11 +1,11 @@
 package amm
 
 import (
+	"github.com/krazyTry/pump-go/amm/helpers"
+	pump_amm "github.com/krazyTry/pump-go/gen/amm"
 	solana "github.com/solana-foundation/solana-go/v2"
 	associatedtokenaccount "github.com/solana-foundation/solana-go/v2/programs/associated-token-account"
 	"github.com/solana-foundation/solana-go/v2/programs/system"
-	"github.com/krazyTry/pump-go/amm/helpers"
-	pump_amm "github.com/krazyTry/pump-go/gen/amm"
 )
 
 // type AdminSDK struct{}
@@ -104,11 +104,14 @@ import (
 // }
 
 type CreatePoolParams struct {
-	Index        uint16
-	BaseIn       uint64
-	QuoteIn      uint64
-	IsMayhemMode bool
-	IsCashback   bool
+	Index             uint16
+	BaseIn            uint64
+	QuoteIn           uint64
+	IsMayhemMode      bool
+	IsCashback        bool
+	CreatorFeeBps     uint64
+	CanEditCreatorFee bool
+	IsHolderReward    bool
 }
 
 func (s *Client) CreatePoolInstruction(
@@ -137,6 +140,9 @@ func (s *Client) CreatePoolInstruction(
 		system.ProgramID,
 		params.IsMayhemMode,
 		pump_amm.OptionBool{V0: params.IsCashback},
+		pump_amm.OptionU64{V0: params.CreatorFeeBps},
+		pump_amm.OptionBool{V0: params.CanEditCreatorFee},
+		pump_amm.OptionBool{V0: params.IsHolderReward},
 		pool,
 		s.GlobalConfig,
 		creator,
