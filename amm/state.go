@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	solana "github.com/solana-foundation/solana-go/v2"
-	"github.com/solana-foundation/solana-go/v2/rpc"
 	"github.com/krazyTry/pump-go/amm/helpers"
 	ammgen "github.com/krazyTry/pump-go/gen/amm"
+	solana "github.com/solana-foundation/solana-go/v2"
+	"github.com/solana-foundation/solana-go/v2/rpc"
 )
 
 func (s *Client) FetchGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
@@ -15,7 +15,7 @@ func (s *Client) FetchGlobalConfig(ctx context.Context) (*GlobalConfig, error) {
 	if err != nil || acc == nil || acc.Value == nil {
 		return nil, fmt.Errorf("global config account not found")
 	}
-	return ammgen.ParseAccount_GlobalConfig(acc.Value.Data.GetBinary())
+	return DecodeGlobalConfig(acc.Value.Data.GetBinary())
 }
 
 func (s *Client) FetchFeeConfig(ctx context.Context) (*FeeConfig, error) {
@@ -23,7 +23,7 @@ func (s *Client) FetchFeeConfig(ctx context.Context) (*FeeConfig, error) {
 	if err != nil || acc == nil || acc.Value == nil {
 		return nil, fmt.Errorf("fee config account not found")
 	}
-	return ammgen.ParseAccount_FeeConfig(acc.Value.Data.GetBinary())
+	return DecodeFeeConfig(acc.Value.Data.GetBinary())
 }
 
 func (s *Client) FetchPool(ctx context.Context, pool solana.PublicKey) (*AccountWithPool, error) {
@@ -32,7 +32,7 @@ func (s *Client) FetchPool(ctx context.Context, pool solana.PublicKey) (*Account
 		return nil, fmt.Errorf("pool account not found")
 	}
 
-	pl, err := ammgen.ParseAccount_Pool(acc.Value.Data.GetBinary())
+	pl, err := DecodePool(acc.Value.Data.GetBinary())
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (s *Client) FetchPoolByBaseMint(ctx context.Context, baseMint solana.Public
 	out := []*AccountWithPool{}
 
 	for _, acc := range accs {
-		pl, err := ammgen.ParseAccount_Pool(acc.Account.Data.GetBinary())
+		pl, err := DecodePool(acc.Account.Data.GetBinary())
 		if err != nil {
 			continue
 		}
@@ -68,7 +68,7 @@ func (s *Client) FetchGlobalVolumeAccumulator(ctx context.Context, globalVolumeA
 	if err != nil || acc == nil || acc.Value == nil {
 		return nil, fmt.Errorf("global volume accumulator account not found")
 	}
-	return ammgen.ParseAccount_GlobalVolumeAccumulator(acc.Value.Data.GetBinary())
+	return DecodeGlobalVolumeAccumulator(acc.Value.Data.GetBinary())
 }
 
 func (s *Client) FetchUserVolumeAccumulator(ctx context.Context, user solana.PublicKey) (*ammgen.UserVolumeAccumulator, error) {
@@ -76,7 +76,7 @@ func (s *Client) FetchUserVolumeAccumulator(ctx context.Context, user solana.Pub
 	if err != nil || acc == nil || acc.Value == nil {
 		return nil, fmt.Errorf("user volume accumulator account not found")
 	}
-	return ammgen.ParseAccount_UserVolumeAccumulator(acc.Value.Data.GetBinary())
+	return DecodeUserVolumeAccumulator(acc.Value.Data.GetBinary())
 }
 
 func (s *Client) FetchPoolLiquidityAmountByUser(ctx context.Context, pool *ammgen.Pool, user solana.PublicKey) (uint64, error) {

@@ -1,38 +1,37 @@
 package helpers
 
 import (
-	"errors"
-
-	solana "github.com/solana-foundation/solana-go/v2"
 	pump "github.com/krazyTry/pump-go/gen/pump"
-	"github.com/shopspring/decimal"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
+// NewBondingCurve seeds a curve the way create_v2 does when the caller has not
+// fetched QuoteControl and the quote is not a nested pump coin.
+// SOL (the zero key or WSOL) starts at InitialVirtualSolReserves. Every other
+// mint starts at InitialVirtualQuoteReserves, which is correct for a mint
+// whitelisted on Global and for callers that predate quote control.
 func NewBondingCurve(global *pump.Global, quoteMint solana.PublicKey) *pump.BondingCurve {
-	q := global.InitialVirtualSolReserves
-	if !quoteMint.Equals(solana.WrappedSol) {
-		q = global.InitialVirtualQuoteReserves
+	virtualQuote := global.InitialVirtualSolReserves
+	stored := solana.PublicKey{}
+	if !IsLegacyQuoteMint(quoteMint) {
+		virtualQuote = global.InitialVirtualQuoteReserves
+		stored = quoteMint
 	}
 	return &pump.BondingCurve{
-		VirtualTokenReserves: global.InitialVirtualTokenReserves,
-		VirtualQuoteReserves: q,
-		RealTokenReserves:    global.InitialRealTokenReserves,
-		RealQuoteReserves:    0,
-		TokenTotalSupply:     global.TokenTotalSupply,
-		Complete:             false,
-		Creator:              solana.PublicKey{},
-		IsMayhemMode:         global.MayhemModeEnabled,
-		IsCashbackCoin:       false,
-		QuoteMint:            solana.PublicKey{},
+		VirtualTokenReserves:        global.InitialVirtualTokenReserves,
+		VirtualQuoteReserves:        virtualQuote,
+		RealTokenReserves:           global.InitialRealTokenReserves,
+		RealQuoteReserves:           0,
+		TokenTotalSupply:            global.TokenTotalSupply,
+		Complete:                    false,
+		Creator:                     solana.PublicKey{},
+		IsMayhemMode:                global.MayhemModeEnabled,
+		IsCashbackCoin:              false,
+		QuoteMint:                   stored,
+		CreatorFeeBps:               0,
+		CanEditCreatorFee:           false,
+		IsHolderReward:              false,
+		Depth:                       0,
+		InitialVirtualQuoteReserves: virtualQuote,
 	}
-}
-
-func BondingCurveMarketCap(mintSupply, virtualQuoteReserves, virtualTokenReserves uint64) (uint64, error) {
-	if virtualTokenReserves == 0 {
-		return 0, errors.New("division by zero: virtual token reserves")
-	}
-	mintSupplyDecimal := decimal.NewFromUint64(mintSupply)
-	virtualQuoteReservesDecimal := decimal.NewFromUint64(virtualQuoteReserves)
-	virtualTokenReservesDecimal := decimal.NewFromUint64(virtualTokenReserves)
-	return virtualQuoteReservesDecimal.Mul(mintSupplyDecimal).Div(virtualTokenReservesDecimal).Ceil().BigInt().Uint64(), nil
 }

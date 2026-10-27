@@ -52,6 +52,16 @@ func (c *TransferFeeConfig) FeeForEpoch(currentEpoch uint64) TransferFee {
 	return c.Newer
 }
 
+// ParseMintTransferFeeConfig reads a Token-2022 mint's TransferFeeConfig extension.
+// A mint without that extension returns nil.
+func ParseMintTransferFeeConfig(data []byte) (*TransferFeeConfig, error) {
+	ext, err := parseToken2022Extensions(data)
+	if err != nil {
+		return nil, err
+	}
+	return ext.TransferFeeConfig, nil
+}
+
 // parseToken2022Extensions parses TLV extensions from a Token-2022 *Mint* account data.
 //
 // data: account data bytes (base64 decoded)

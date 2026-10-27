@@ -53,3 +53,15 @@ func DeriveUserVolumeAccumulator(user solana.PublicKey) solana.PublicKey {
 	key, _, _ := solana.FindProgramAddress([][]byte{[]byte("user_volume_accumulator"), user.Bytes()}, ProgramID)
 	return key
 }
+
+// DeriveQuoteControl is the QuoteControl PDA (seeds ["quote-control"]).
+func DeriveQuoteControl() solana.PublicKey {
+	key, _, _ := solana.FindProgramAddress([][]byte{[]byte("quote-control")}, ProgramID)
+	return key
+}
+
+// DeriveHolderRewards is the per-mint holder-rewards PDA, the creator of a holder-reward coin.
+func DeriveHolderRewards(mint solana.PublicKey) solana.PublicKey {
+	key, _, _ := solana.FindProgramAddress([][]byte{[]byte("holder-rewards"), mint.Bytes()}, ProgramID)
+	return key
+}

@@ -1,8 +1,8 @@
 package amm
 
 import (
-	solana "github.com/solana-foundation/solana-go/v2"
 	ammgen "github.com/krazyTry/pump-go/gen/amm"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 type Pool = ammgen.Pool

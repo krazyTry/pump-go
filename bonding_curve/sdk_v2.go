@@ -56,17 +56,57 @@ func (s *Client) CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTo
 		return nil, err
 	}
 
-	if !(quoteMint.Equals(solana.WrappedSol) || quoteMint.Equals(solana.PublicKey{})) {
-		if gi, ok := ix.(*solana.GenericInstruction); ok {
-			gi.AccountValues = append(
-				gi.AccountValues,
-				solana.NewAccountMeta(quoteMint, false, false),
-				solana.NewAccountMeta(helpers.FindAssociatedTokenAddress(bondingCurve, quoteMint, quoteTokenProgram), false, false),
-				solana.NewAccountMeta(quoteTokenProgram, false, false),
-			)
-		}
+	if !helpers.IsLegacyQuoteMint(quoteMint) {
+		appendCreateV2QuoteAccounts(ix, baseMint, quoteMint, quoteTokenProgram, nil)
 	}
 	return ix, nil
+}
+
+// CreateV2InstructionWithPumpQuote is create_v2 for a pump-coin quote.
+// pumpQuote supplies the canonical pool accounts of Q and of every coin below it.
+func (s *Client) CreateV2InstructionWithPumpQuote(creator, user, baseMint, quoteMint, quoteTokenProgram solana.PublicKey, name, symbol, uri string, mayhemMode bool, cashback bool, creatorFeeBps uint64, isHolderReward bool, pumpQuote *PumpQuoteAccounts) (solana.Instruction, error) {
+	ix, err := s.CreateV2Instruction(creator, user, baseMint, solana.PublicKey{}, quoteTokenProgram, name, symbol, uri, mayhemMode, cashback, creatorFeeBps, isHolderReward)
+	if err != nil {
+		return nil, err
+	}
+	if helpers.IsLegacyQuoteMint(quoteMint) {
+		return ix, nil
+	}
+	appendCreateV2QuoteAccounts(ix, baseMint, quoteMint, quoteTokenProgram, pumpQuote)
+	return ix, nil
+}
+
+func appendCreateV2QuoteAccounts(ix solana.Instruction, baseMint, quoteMint, quoteTokenProgram solana.PublicKey, pumpQuote *PumpQuoteAccounts) {
+	gi, ok := ix.(*solana.GenericInstruction)
+	if !ok {
+		return
+	}
+	bondingCurve := DeriveBondingCurve(baseMint)
+	gi.AccountValues = append(gi.AccountValues,
+		solana.NewAccountMeta(quoteMint, false, false),
+		solana.NewAccountMeta(helpers.FindAssociatedTokenAddress(bondingCurve, quoteMint, quoteTokenProgram), true, false),
+		solana.NewAccountMeta(quoteTokenProgram, false, false),
+		solana.NewAccountMeta(DeriveQuoteControl(), false, false),
+	)
+	if pumpQuote == nil {
+		return
+	}
+	appendPumpQuoteGroup(gi, quoteMint, pumpQuote.Pool)
+	for _, coin := range pumpQuote.Chain {
+		appendPumpQuoteGroup(gi, coin.Mint, coin.Pool)
+	}
+}
+
+func appendPumpQuoteGroup(gi *solana.GenericInstruction, mint solana.PublicKey, pool *PumpQuotePoolAccounts) {
+	gi.AccountValues = append(gi.AccountValues, solana.NewAccountMeta(DeriveBondingCurve(mint), false, false))
+	if pool == nil {
+		return
+	}
+	gi.AccountValues = append(gi.AccountValues,
+		solana.NewAccountMeta(pool.Pool, false, false),
+		solana.NewAccountMeta(pool.BaseVault, false, false),
+		solana.NewAccountMeta(pool.QuoteVault, false, false),
+	)
 }
 
 func (c *Client) GetBuyV2Instruction(creator solana.PublicKey, partialFill bool, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram, userBaseTokenAccount, userQuoteTokenAccount solana.PublicKey, amount, maxSolCost uint64, feeRecipient, buybackFeeRecipient solana.PublicKey) (solana.Instruction, error) {

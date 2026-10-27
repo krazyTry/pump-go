@@ -8,8 +8,8 @@ import (
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
 	"github.com/krazyTry/pump-go/bonding_curve/math"
 
-	solana "github.com/solana-foundation/solana-go/v2"
 	pump "github.com/krazyTry/pump-go/gen/pump"
+	solana "github.com/solana-foundation/solana-go/v2"
 )
 
 func (o *Client) FetchGlobal(ctx context.Context) (*pump.Global, error) {
@@ -154,79 +154,34 @@ func IsSharingConfigEditable(sc *pump.SharingConfig) bool {
 }
 
 func GetBuyTokenAmountFromSolAmount(global *Global, feeConfig *FeeConfig, mintSupply uint64, curve *BondingCurve, amount uint64) (uint64, error) {
-	if amount == 0 {
-		return 0, nil
-	}
-
-	isNew := false
-
-	if curve == nil || mintSupply == 0 {
-		curve = helpers.NewBondingCurve(global, solana.PublicKey{})
-		mintSupply = global.TokenTotalSupply
-		isNew = true
-	}
-
-	if curve.VirtualTokenReserves == 0 {
-		return 0, nil
-	}
-
-	fees, err := helpers.ComputeFeesBps(global, feeConfig, mintSupply, curve.VirtualQuoteReserves, curve.VirtualTokenReserves)
-
-	if err != nil {
-		return 0, err
-	}
-
-	totalBps := fees.ProtocolFeeBps
-
-	if isNew || !curve.Creator.Equals(solana.PublicKey{}) {
-		totalBps += fees.CreatorFeeBps
-	}
-
-	inputAmount := ((amount - 1) * 10_000) / (10_000 + totalBps)
-
-	t := math.GetBuyTokenAmountFromSolAmountQuote(inputAmount, curve.VirtualTokenReserves, curve.VirtualQuoteReserves)
-	if t > curve.RealTokenReserves {
-		return curve.RealTokenReserves, nil
-	}
-	return t, nil
+	return BuyTokenAmountFromQuote(TradeQuoteParams{
+		Global:        global,
+		FeeConfig:     feeConfig,
+		MintSupplySet: mintSupply != 0,
+		MintSupply:    mintSupply,
+		BondingCurve:  curve,
+		Amount:        amount,
+	})
 }
 
 func GetBuySolAmountFromTokenAmount(global *Global, feeConfig *FeeConfig, mintSupply uint64, curve *BondingCurve, amount uint64) (uint64, error) {
-	if amount == 0 {
-		return 0, nil
-	}
-
-	isNew := false
-	if curve == nil || mintSupply == 0 {
-		curve = helpers.NewBondingCurve(global, solana.PublicKey{})
-		mintSupply = global.TokenTotalSupply
-		isNew = true
-	}
-
-	if curve.VirtualTokenReserves == 0 {
-		return 0, nil
-	}
-
-	minAmount := min(amount, curve.RealTokenReserves)
-
-	cost := math.GetBuySolAmountFromTokenAmountQuote(minAmount, curve.VirtualTokenReserves, curve.VirtualQuoteReserves)
-
-	f, err := helpers.GetFee(global, feeConfig, mintSupply, curve, cost, isNew)
-	if err != nil {
-		return 0, err
-	}
-	return cost + f, nil
+	return BuyQuoteAmountFromTokenAmount(TradeQuoteParams{
+		Global:        global,
+		FeeConfig:     feeConfig,
+		MintSupplySet: mintSupply != 0,
+		MintSupply:    mintSupply,
+		BondingCurve:  curve,
+		Amount:        amount,
+	})
 }
 
 func GetSellSolAmountFromTokenAmount(global *Global, feeConfig *FeeConfig, mintSupply uint64, curve *BondingCurve, amount uint64) (uint64, error) {
-	if amount == 0 || curve.VirtualTokenReserves == 0 {
-		return 0, nil
-	}
-	cost := math.GetSellSolAmountFromTokenAmountQuote(amount, curve.VirtualTokenReserves, curve.VirtualQuoteReserves)
-
-	f, err := helpers.GetFee(global, feeConfig, mintSupply, curve, cost, false)
-	if err != nil {
-		return 0, err
-	}
-	return cost - f, nil
+	return SellQuoteAmountFromTokenAmount(TradeQuoteParams{
+		Global:        global,
+		FeeConfig:     feeConfig,
+		MintSupplySet: true,
+		MintSupply:    mintSupply,
+		BondingCurve:  curve,
+		Amount:        amount,
+	})
 }

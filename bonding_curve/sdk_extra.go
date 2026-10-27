@@ -125,6 +125,9 @@ func (c *Client) CreateAndBuyV2Instructions(ctx context.Context, global *pump.Gl
 
 // Deprecated: Use CreateV2AndBuyV2Instructions.
 func (c *Client) CreateV2AndBuyInstructions(ctx context.Context, global *pump.Global, baseMint solana.PublicKey, name, symbol, uri string, creator, user solana.PublicKey, amount, solAmount uint64, mayhemMode bool, cashback bool, creatorFeeBps uint64, isHolderReward bool) ([]solana.Instruction, error) {
+	if err := AssertCreateV2Flags(global, baseMint, cashback, isHolderReward, creatorFeeBps); err != nil {
+		return nil, err
+	}
 	createIx, err := c.CreateV2Instruction(creator, user, baseMint, solana.WrappedSol, solana.TokenProgramID, name, symbol, uri, mayhemMode, cashback, creatorFeeBps, isHolderReward)
 	if err != nil {
 		return nil, err
@@ -183,6 +186,9 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 	if quoteTokenProgram.Equals(solana.PublicKey{}) {
 		quoteTokenProgram = solana.TokenProgramID
 	}
+	if err := AssertCreateV2Flags(global, baseMint, cashback, isHolderReward, creatorFeeBps); err != nil {
+		return nil, nil, nil, err
+	}
 
 	createIx, err := c.CreateV2Instruction(creator, user, baseMint, quoteMint, quoteTokenProgram, name, symbol, uri, mayhemMode, cashback, creatorFeeBps, isHolderReward)
 	if err != nil {
@@ -210,15 +216,17 @@ func (c *Client) CreateV2AndBuyV2Instructions(ctx context.Context, global *pump.
 		pre = append(pre, ixB)
 	}
 
-	wrapIx, err := helpers.WrapSOLInstruction(user, quoteTokenAccount, quoteAmount)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	pre = append(pre, wrapIx...)
+	if helpers.IsLegacyQuoteMint(quoteMint) {
+		wrapIx, err := helpers.WrapSOLInstruction(user, quoteTokenAccount, quoteAmount)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		pre = append(pre, wrapIx...)
 
-	unwrapIx, uerr := helpers.UnwrapSOLInstruction(user, user, true)
-	if uerr == nil && unwrapIx != nil {
-		post = append(post, unwrapIx)
+		unwrapIx, uerr := helpers.UnwrapSOLInstruction(user, user, true)
+		if uerr == nil && unwrapIx != nil {
+			post = append(post, unwrapIx)
+		}
 	}
 
 	buyIx, err := c.GetBuyV2Instruction(
@@ -287,7 +295,8 @@ func (c *Client) BuyInstructions(ctx context.Context, global *pump.Global, bondi
 
 func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, partialFill bool, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram solana.PublicKey, amount, quoteAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 
-	if quoteMint.Equals(solana.PublicKey{}) || quoteMint.Equals(solana.WrappedSol) {
+	legacyQuote := helpers.IsLegacyQuoteMint(quoteMint)
+	if legacyQuote {
 		quoteMint = solana.WrappedSol
 		quoteTokenProgram = solana.TokenProgramID
 	}
@@ -315,15 +324,17 @@ func (c *Client) BuyV2Instructions(ctx context.Context, global *pump.Global, bon
 		pre = append(pre, ixB)
 	}
 
-	wrapIx, err := helpers.WrapSOLInstruction(user, quoteTokenAccount, maxQuote)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	pre = append(pre, wrapIx...)
+	if legacyQuote {
+		wrapIx, err := helpers.WrapSOLInstruction(user, quoteTokenAccount, maxQuote)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		pre = append(pre, wrapIx...)
 
-	unwrapIx, uerr := helpers.UnwrapSOLInstruction(user, user, true)
-	if uerr == nil && unwrapIx != nil {
-		post = append(post, unwrapIx)
+		unwrapIx, uerr := helpers.UnwrapSOLInstruction(user, user, true)
+		if uerr == nil && unwrapIx != nil {
+			post = append(post, unwrapIx)
+		}
 	}
 
 	ix, err := c.GetBuyV2Instruction(
@@ -386,7 +397,8 @@ func (c *Client) SellInstructions(ctx context.Context, global *pump.Global, bond
 
 func (c *Client) SellV2Instructions(ctx context.Context, global *pump.Global, bondingCurve *pump.BondingCurve, user, baseMint, quoteMint, baseTokenProgram, quoteTokenProgram solana.PublicKey, amount, quoteAmount uint64, slippage float64) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 
-	if quoteMint.Equals(solana.PublicKey{}) || quoteMint.Equals(solana.WrappedSol) {
+	legacyQuote := helpers.IsLegacyQuoteMint(quoteMint)
+	if legacyQuote {
 		quoteMint = solana.WrappedSol
 		quoteTokenProgram = solana.TokenProgramID
 	}
@@ -401,7 +413,7 @@ func (c *Client) SellV2Instructions(ctx context.Context, global *pump.Global, bo
 		return nil, nil, nil, err
 	}
 
-	quoteTokenAccount, ixB, err := helpers.GetOrCreateATAInstruction(ctx, c.RPC, solana.WrappedSol, user, user, quoteTokenProgram)
+	quoteTokenAccount, ixB, err := helpers.GetOrCreateATAInstruction(ctx, c.RPC, quoteMint, user, user, quoteTokenProgram)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -414,9 +426,11 @@ func (c *Client) SellV2Instructions(ctx context.Context, global *pump.Global, bo
 		pre = append(pre, ixB)
 	}
 
-	unwrapIx, uerr := helpers.UnwrapSOLInstruction(user, user, true)
-	if uerr == nil && unwrapIx != nil {
-		post = append(post, unwrapIx)
+	if legacyQuote {
+		unwrapIx, uerr := helpers.UnwrapSOLInstruction(user, user, true)
+		if uerr == nil && unwrapIx != nil {
+			post = append(post, unwrapIx)
+		}
 	}
 
 	ix, err := c.GetSellV2Instruction(
