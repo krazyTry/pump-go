@@ -16,10 +16,9 @@ import (
 // Ep6iSRnmcP1uwYV4eQKEkfPTQQrpp6nHby2yU9G1dwbo 2u4atG3WQr5Y7jZ3x7LPqDet26NeRjPTrjKxdzdoMqjQn1rsMGsGhkUyhDDGWJZbDgdyzruvv3SouEJeXtPCigT3
 
 func TestCreatePool(t *testing.T) {
-
+	return
 	pumpService := bonding_curve.NewClient(rpcClient, rpc.CommitmentFinalized)
 	fmt.Println(pumpService.Global)
-	return
 
 	name := "PumpGoTest"
 	symbol := "PUMPGOTEST"

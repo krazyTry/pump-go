@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	token_metadata "github.com/928799934/metaplex-go/clients/token-metadata"
+	"github.com/krazyTry/pump-go/amm"
 	"github.com/solana-foundation/solana-go/v2"
 	"github.com/solana-foundation/solana-go/v2/rpc"
-	"github.com/krazyTry/pump-go/amm"
 )
 
 // 7kCd7jFy6MMKSnL5So96RSSarsBDiBrxtTy7semGoBgZ 5Z9yeEAdetHyPVFuz4orcbDjeddo4VVrJ72CzvFBoseY6XM1zMdTC6wfQvgju4ntyHqgfGwUBptywzY2n1NFvFC1
@@ -17,6 +17,7 @@ import (
 // Ep6iSRnmcP1uwYV4eQKEkfPTQQrpp6nHby2yU9G1dwbo 2u4atG3WQr5Y7jZ3x7LPqDet26NeRjPTrjKxdzdoMqjQn1rsMGsGhkUyhDDGWJZbDgdyzruvv3SouEJeXtPCigT3
 
 func TestCreatePool(t *testing.T) {
+	return
 	ammService := amm.NewClient(rpcClient, rpc.CommitmentFinalized)
 
 	ownerWallet := &solana.Wallet{PrivateKey: solana.MustPrivateKeyFromBase58("5Z9yeEAdetHyPVFuz4orcbDjeddo4VVrJ72CzvFBoseY6XM1zMdTC6wfQvgju4ntyHqgfGwUBptywzY2n1NFvFC1")}

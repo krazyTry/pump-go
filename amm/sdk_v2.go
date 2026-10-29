@@ -98,7 +98,7 @@ func (s *Client) BuyV2Instructions(ctx context.Context, baseOut, maxQuoteIn uint
 }
 
 // BuyExactQuoteInV2Instructions builds buy_exact_quote_in_v2 plus the user's ATAs.
-func (s *Client) BuyExactQuoteInV2Instructions(ctx context.Context, spendableQuoteIn, minBaseOut uint64, globalConfig *GlobalConfig, pool *AccountWithPool, user, baseTokenProgram, quoteTokenProgram solana.PublicKey) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
+func (s *Client) BuyExactQuoteInV2Instructions(ctx context.Context, minBaseOut, spendableQuoteIn uint64, globalConfig *GlobalConfig, pool *AccountWithPool, user, baseTokenProgram, quoteTokenProgram solana.PublicKey) (solana.Instruction, []solana.Instruction, []solana.Instruction, error) {
 	userBase, userQuote, pre, post, err := s.prepareUserAccounts(ctx, user, pool.Account.BaseMint, pool.Account.QuoteMint, baseTokenProgram, quoteTokenProgram, spendableQuoteIn, true)
 	if err != nil {
 		return nil, nil, nil, err
@@ -123,8 +123,36 @@ func (s *Client) SellV2Instructions(ctx context.Context, baseIn, minQuoteOut uin
 	return ix, pre, post, err
 }
 
+// InitBoostInstruction initializes the boost vault.
+func (s *Client) InitBoostInstruction(poolKey solana.PublicKey, pool *Pool, quoteTokenProgram solana.PublicKey) (solana.Instruction, error) {
+	authorityPDA := DeriveBoostVaultAuthority(poolKey)
+	ix, err := pump_amm.NewInitBoostInstruction(
+		poolKey, s.GlobalConfig, pool.Creator, pool.BaseMint, pool.QuoteMint,
+		pool.PoolBaseTokenAccount, pool.PoolQuoteTokenAccount,
+		authorityPDA, helpers.FindAssociatedTokenAddress(authorityPDA, pool.QuoteMint, quoteTokenProgram),
+		quoteTokenProgram, solana.SystemProgramID, solana.SPLAssociatedTokenAccountProgramID, s.EventAuthority, ProgramID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ix, nil
+}
+
+// SetBoostAuthorityInstruction sets the boost authority for a pool.
+func (s *Client) SetBoostAuthorityInstruction(poolKey solana.PublicKey, admin solana.PublicKey) (solana.Instruction, error) {
+	authorityPDA := DeriveBoostVaultAuthority(poolKey)
+	ix, err := pump_amm.NewSetBoostAuthorityInstruction(
+		admin, s.GlobalConfig, authorityPDA, solana.SystemProgramID, s.EventAuthority, ProgramID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ix, nil
+}
+
 // BoostBuyAndBurnInstruction buys base with the boost vault and burns it. quoteMint is marked writable.
 func (s *Client) BoostBuyAndBurnInstruction(poolKey solana.PublicKey, pool *Pool, authority solana.PublicKey, quoteAmountIn, minBaseAmountBurned uint64, baseTokenProgram, quoteTokenProgram solana.PublicKey) (solana.Instruction, error) {
+
 	authorityPDA := DeriveBoostVaultAuthority(poolKey)
 	ix, err := pump_amm.NewBoostBuyAndBurnInstruction(
 		quoteAmountIn, minBaseAmountBurned,

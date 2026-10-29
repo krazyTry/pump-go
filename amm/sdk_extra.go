@@ -143,7 +143,7 @@ func (s *Client) BuyBaseInput(base uint64, slippage float64, pool *Pool, globalC
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (s *Client) BuyQuoteInput(quote uint64, slippage float64, pool *Pool, globalConfig *GlobalConfig, feeConfig *FeeConfig, opts ...TradeOptions) (*BuyQuoteInputResult, error) {
@@ -172,7 +172,7 @@ func (s *Client) BuyQuoteInput(quote uint64, slippage float64, pool *Pool, globa
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (s *Client) SellBaseInput(base uint64, slippage float64, pool *Pool, globalConfig *GlobalConfig, feeConfig *FeeConfig) (*SellBaseInputResult, error) {

@@ -206,22 +206,22 @@ func requireReserves(baseReserve, quoteReserve uint64) error {
 }
 
 // BuyBaseInput quotes the quote a buy of base spends, fees and transfer fee included.
-func BuyBaseInput(p BuyBaseInputParams) (BuyBaseInputResult, error) {
+func BuyBaseInput(p BuyBaseInputParams) (*BuyBaseInputResult, error) {
 	if err := requireReserves(p.BaseReserve, p.QuoteReserve); err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	if p.Base > p.BaseReserve {
-		return BuyBaseInputResult{}, errors.New("Cannot buy more base tokens than the pool reserves.")
+		return nil, errors.New("Cannot buy more base tokens than the pool reserves.")
 	}
 	effective := effectiveQuoteReserve(p.QuoteReserve, p.VirtualQuoteReserves)
 	numerator := new(big.Int).Mul(effective, u64(p.Base))
 	denominator := new(big.Int).Sub(u64(p.BaseReserve), u64(p.Base))
 	if denominator.Sign() == 0 {
-		return BuyBaseInputResult{}, errors.New("Pool would be depleted; denominator is zero.")
+		return nil, errors.New("Pool would be depleted; denominator is zero.")
 	}
 	quoteAmountIn, err := ceilDiv(numerator, denominator)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	rates, err := feeRates(FeeParams{
 		GlobalConfig:   p.GlobalConfig,
@@ -236,45 +236,45 @@ func BuyBaseInput(p BuyBaseInputParams) (BuyBaseInputResult, error) {
 		CreatorFeeBps:  p.CreatorFeeBps,
 	})
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	lpFee, err := feeAmount(quoteAmountIn, rates.LpFeeBps)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	protocolFee, err := feeAmount(quoteAmountIn, rates.ProtocolFeeBps)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	coinCreatorFee, err := feeAmount(quoteAmountIn, creatorBps(p.CoinCreator, rates.CreatorFeeBps))
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	quoteU, err := fitUint64(quoteAmountIn)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	lpU, err := fitUint64(lpFee)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	protocolU, err := fitUint64(protocolFee)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	creatorU, err := fitUint64(coinCreatorFee)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	total, err := BuyDebit(quoteU, lpU, protocolU, creatorU, p.QuoteTransferFee, p.TradeV2, p.GlobalConfig, p.IsMayhemMode)
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
 	maxQuote, err := fitUint64(applySlippage(u64(total), p.Slippage, true))
 	if err != nil {
-		return BuyBaseInputResult{}, err
+		return nil, err
 	}
-	return BuyBaseInputResult{
+	return &BuyBaseInputResult{
 		InternalQuoteAmount: quoteU,
 		UIQuote:             total,
 		MaxQuote:            maxQuote,
@@ -283,9 +283,9 @@ func BuyBaseInput(p BuyBaseInputParams) (BuyBaseInputResult, error) {
 
 // BuyQuoteInput quotes the base a quote budget buys.
 // quote is what leaves the wallet, transfer fee included.
-func BuyQuoteInput(p BuyQuoteInputParams) (BuyQuoteInputResult, error) {
+func BuyQuoteInput(p BuyQuoteInputParams) (*BuyQuoteInputResult, error) {
 	if err := requireReserves(p.BaseReserve, p.QuoteReserve); err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	effective := effectiveQuoteReserve(p.QuoteReserve, p.VirtualQuoteReserves)
 	rates, err := feeRates(FeeParams{
@@ -301,7 +301,7 @@ func BuyQuoteInput(p BuyQuoteInputParams) (BuyQuoteInputResult, error) {
 		CreatorFeeBps:  p.CreatorFeeBps,
 	})
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	creatorRate := creatorBps(p.CoinCreator, rates.CreatorFeeBps)
 	totalFeeBps := rates.LpFeeBps + rates.ProtocolFeeBps + creatorRate
@@ -309,25 +309,25 @@ func BuyQuoteInput(p BuyQuoteInputParams) (BuyQuoteInputResult, error) {
 
 	spendable, err := NetOfTransferFee(p.QuoteTransferFee, u64(p.Quote))
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	if spendable.Sign() <= 0 {
-		return BuyQuoteInputResult{}, errors.New("The quote budget does not cover the transfer fee.")
+		return nil, errors.New("The quote budget does not cover the transfer fee.")
 	}
 	effectiveQuote := new(big.Int).Mul(spendable, big.NewInt(10_000))
 	effectiveQuote.Quo(effectiveQuote, denominator)
 
 	lpFee, err := feeAmount(effectiveQuote, rates.LpFeeBps)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	protocolFee, err := feeAmount(effectiveQuote, rates.ProtocolFeeBps)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	coinCreatorFee, err := feeAmount(effectiveQuote, creatorRate)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	totalWithFees := new(big.Int).Add(effectiveQuote, lpFee)
 	totalWithFees.Add(totalWithFees, protocolFee)
@@ -336,56 +336,56 @@ func BuyQuoteInput(p BuyQuoteInputParams) (BuyQuoteInputResult, error) {
 		effectiveQuote = new(big.Int).Sub(effectiveQuote, new(big.Int).Sub(totalWithFees, spendable))
 	}
 	if effectiveQuote.Sign() <= 0 {
-		return BuyQuoteInputResult{}, errors.New("The quote budget does not cover the fees.")
+		return nil, errors.New("The quote budget does not cover the fees.")
 	}
 
 	quoteU, err := fitUint64(effectiveQuote)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	lpU, err := fitUint64(lpFee)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	protocolU, err := fitUint64(protocolFee)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	creatorU, err := fitUint64(coinCreatorFee)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	debit, err := BuyDebit(quoteU, lpU, protocolU, creatorU, p.QuoteTransferFee, p.TradeV2, p.GlobalConfig, p.IsMayhemMode)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	if debit > p.Quote {
 		effectiveQuote = new(big.Int).Sub(effectiveQuote, u64(debit-p.Quote))
 	}
 	if effectiveQuote.Sign() <= 0 {
-		return BuyQuoteInputResult{}, errors.New("The quote budget does not cover the fees.")
+		return nil, errors.New("The quote budget does not cover the fees.")
 	}
 
 	inputAmount := new(big.Int).Sub(effectiveQuote, big.NewInt(1))
 	numerator := new(big.Int).Mul(u64(p.BaseReserve), inputAmount)
 	denominatorEffective := new(big.Int).Add(effective, inputAmount)
 	if denominatorEffective.Sign() == 0 {
-		return BuyQuoteInputResult{}, errors.New("Pool would be depleted; denominator is zero.")
+		return nil, errors.New("Pool would be depleted; denominator is zero.")
 	}
 	baseOut := new(big.Int).Quo(numerator, denominatorEffective)
 	baseU, err := fitUint64(baseOut)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	internalU, err := fitUint64(effectiveQuote)
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
 	maxQuote, err := fitUint64(applySlippage(u64(p.Quote), p.Slippage, true))
 	if err != nil {
-		return BuyQuoteInputResult{}, err
+		return nil, err
 	}
-	return BuyQuoteInputResult{
+	return &BuyQuoteInputResult{
 		Base:                     baseU,
 		InternalQuoteWithoutFees: internalU,
 		MaxQuote:                 maxQuote,

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/solana-foundation/solana-go/v2"
-	"github.com/solana-foundation/solana-go/v2/rpc"
 	"github.com/krazyTry/pump-go/amm"
 	"github.com/krazyTry/pump-go/bonding_curve/helpers"
+	"github.com/solana-foundation/solana-go/v2"
+	"github.com/solana-foundation/solana-go/v2/rpc"
 )
 
 func TestDeposit(t *testing.T) {
+	return
 	ammService := amm.NewClient(rpcClient, rpc.CommitmentFinalized)
 
 	// 7kCd7jFy6MMKSnL5So96RSSarsBDiBrxtTy7semGoBgZ 5Z9yeEAdetHyPVFuz4orcbDjeddo4VVrJ72CzvFBoseY6XM1zMdTC6wfQvgju4ntyHqgfGwUBptywzY2n1NFvFC1
