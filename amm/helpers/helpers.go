@@ -10,14 +10,14 @@ import (
 var rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 var protocolFeeRecipients = []solana.PublicKey{
-	solana.MustPublicKeyFromBase58("62qc2CNXwrYqQScmEdiZFFAnJR262PxWEuNQtxfafNgV"),
-	solana.MustPublicKeyFromBase58("7VtfL8fvgNfhz17qKRMjzQEXgbdpnHHHQRh54R9jP2RJ"),
-	solana.MustPublicKeyFromBase58("7hTckgnGnLQR6sdH7YkqFTAA7VwTfYFaZ6EhEsU3saCX"),
-	solana.MustPublicKeyFromBase58("9rPYyANsfQZw3DnDmKE3YCQF5E8oD89UXoHn9JFEhJUz"),
-	solana.MustPublicKeyFromBase58("AVmoTthdrX6tKt4nDjco2D775W2YK3sDhxPcMmzUAmTY"),
-	solana.MustPublicKeyFromBase58("FWsW1xNtWscwNmKv6wVsU1iTzRN6wmmk3MjxRP5tT7hz"),
-	solana.MustPublicKeyFromBase58("G5UZAVbAf46s7cKWoyKu8kYTip9DGTpbLZ2qa9Aq69dP"),
-	solana.MustPublicKeyFromBase58("JCRGumoE9Qi5BBgULTgdgTLjSgkCMSbF62ZZfGs84JeU"),
+	solana.MustPublicKeyFromBase58("2aSWZ3QXsNLVVBr1UB1HxSw7sqMRR2pv2qa5ohsTi5Gp"),
+	solana.MustPublicKeyFromBase58("3Mqk6qHEj7r3TFNFYjCP85a5venbp2mefYQTSKVVchBC"),
+	solana.MustPublicKeyFromBase58("A3cm36KqisUXVTSRCK6VQ7kvXLene4gsbQedhcd5MujQ"),
+	solana.MustPublicKeyFromBase58("BWNNnhN6id5j71h5wfkzmXjnV2fgF9zA61FqGJJjnakw"),
+	solana.MustPublicKeyFromBase58("DrcDxWxLi3i7Yd7cTyCyd44DE7pwS9BvFxSsPx1c7XTv"),
+	solana.MustPublicKeyFromBase58("EAN7utdjyxhKVaqA69DRyxW5ffBhnidRZfifmfhwUgPm"),
+	solana.MustPublicKeyFromBase58("Eh7hTLi6iMbT55jAEYVgtN5QaSb6z9Ytzwxs2LGG5qg4"),
+	solana.MustPublicKeyFromBase58("Fso3Ggq2Um1pQT6Uzq8wDicgRh62vANYZUT8uqJd2fXh"),
 }
 
 func GetStaticRandomProtocolFeeRecipient() solana.PublicKey {
@@ -25,7 +25,6 @@ func GetStaticRandomProtocolFeeRecipient() solana.PublicKey {
 }
 
 var reservedFeeRecipients = []solana.PublicKey{
-	solana.MustPublicKeyFromBase58("GesfTA3X2arioaHp8bbKdjG9vJtskViWACZoYvxp4twS"),
 	solana.MustPublicKeyFromBase58("4budycTjhs9fD6xw62VBducVTNgMgJJ5BgtKq7mAZwn6"),
 	solana.MustPublicKeyFromBase58("8SBKzEQU4nLSzcwF4a74F2iaUDQyTfjGndn6qUWBnrpR"),
 	solana.MustPublicKeyFromBase58("4UQeTP1T39KZ9Sfxzo3WR5skgsaP6NZa87BAkuazLEKH"),
